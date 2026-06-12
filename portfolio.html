@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Arij Chabbouh — Software Engineer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#F2F4FA;
+  --bg2:#EAECF5;
+  --surface:rgba(255,255,255,0.7);
+  --surface2:rgba(255,255,255,0.5);
+  --border:rgba(180,190,220,0.4);
+  --border2:rgba(100,120,200,0.2);
+  --ink:#0A0F2C;
+  --ink2:#1A2040;
+  --muted:#6B7599;
+  --dim:#9AA3C2;
+  --acc:#2563EB;
+  --acc2:#06B6D4;
+  --acc3:#818CF8;
+  --glow:rgba(37,99,235,0.18);
+  --glow2:rgba(6,182,212,0.15);
+}
+
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'DM Sans',sans-serif;
+  overflow-x:hidden;
+  line-height:1.65;
+}
+
+/* ---------- 3D CANVAS ---------- */
+#three-canvas{
+  position:fixed;
+  top:0;right:0;
+  width:55%;height:100vh;
+  pointer-events:none;
+  z-index:0;
+  opacity:0.9;
+}
+
+/* ---------- NAV ---------- */
+nav{
+  position:fixed;top:0;width:100%;z-index:300;
+  padding:1.2rem 3.5rem;
+  display:flex;justify-content:space-between;align-items:center;
+  background:rgba(242,244,250,0.72);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+}
+
+/* LOGO inspired by sohub minimal wordmark */
+.logo{
+  font-family:'Syne',sans-serif;
+  font-weight:800;
+  font-size:1.35rem;
+  letter-spacing:-0.03em;
+  color:var(--ink);
+  text-decoration:none;
+}
+.logo-accent{
+  color:var(--acc);
+}
+
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{
+  text-decoration:none;color:var(--muted);
+  font-size:0.78rem;font-weight:500;
+  letter-spacing:0.08em;text-transform:uppercase;
+  transition:color 0.25s;
+}
+.nav-links a:hover{color:var(--ink)}
+
+.nav-cta{
+  background:var(--ink);
+  color:#fff;
+  border:none;
+  padding:0.6rem 1.4rem;border-radius:100px;
+  font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;
+  cursor:pointer;transition:all 0.25s;letter-spacing:0.03em;
+  text-decoration:none;
+  display:flex;align-items:center;gap:0.5rem;
+}
+.nav-cta-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:#22c55e;
+  box-shadow:0 0 8px #22c55e;
+  animation:pulse 2s ease-in-out infinite;
+}
+.nav-cta:hover{background:var(--acc);transform:translateY(-1px)}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.4)}}
+
+/* ---------- HERO ---------- */
+#hero{
+  position:relative;z-index:1;
+  min-height:100vh;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:10rem 3.5rem 5rem;
+  max-width:760px;
+}
+
+.hero-badge{
+  display:inline-flex;align-items:center;gap:0.55rem;
+  background:rgba(37,99,235,0.07);
+  border:1px solid rgba(37,99,235,0.2);
+  padding:0.35rem 1rem;border-radius:100px;
+  font-size:0.72rem;font-weight:500;color:var(--acc);
+  letter-spacing:0.1em;text-transform:uppercase;
+  margin-bottom:2.5rem;
+  animation:fadeUp 0.7s ease both;
+}
+.badge-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:#22c55e;box-shadow:0 0 8px #22c55e;
+  animation:pulse 2s infinite;
+}
+
+/* BIG NAME — inspired by sohub oversized behind-text approach */
+.hero-bg-text{
+  position:absolute;
+  left:-0.05em;
+  top:50%;transform:translateY(-56%);
+  font-family:'Syne',sans-serif;
+  font-size:clamp(5rem,14vw,13rem);
+  font-weight:800;
+  letter-spacing:-0.055em;
+  color:transparent;
+  -webkit-text-stroke:1.5px rgba(8, 24, 58, 0.08);
+  white-space:nowrap;
+  pointer-events:none;
+  user-select:none;
+  z-index:0;
+  line-height:1;
+}
+
+.hero-name{
+  font-family:'Syne',sans-serif;
+  font-size:clamp(2.6rem,6.2vw,5.8rem);
+  font-weight:800;
+  line-height:0.94;
+  letter-spacing:-0.04em;
+  margin-bottom:1.5rem;
+  animation:fadeUp 0.7s 0.1s ease both;
+  position:relative;z-index:1;
+  max-width:100%;
+}
+.hero-name .line1{
+  display:block;color:var(--ink);
+}
+.hero-name .line2{
+  display:block;
+  font-size:clamp(2rem,6vw,4rem);
+  background:linear-gradient(110deg,var(--acc) 0%,var(--acc2) 80%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+.hero-role{
+  font-size:0.82rem;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--dim);font-weight:400;margin-bottom:2rem;
+  display:flex;align-items:center;gap:0.8rem;
+  animation:fadeUp 0.7s 0.2s ease both;
+  position:relative;z-index:1;
+}
+.hero-role span{color:var(--border);font-size:0.9em}
+
+.hero-sub{
+  font-size:1.05rem;color:var(--muted);
+  max-width:460px;line-height:1.78;
+  margin-bottom:3rem;
+  font-weight:300;
+  animation:fadeUp 0.7s 0.3s ease both;
+  position:relative;z-index:1;
+}
+.hero-sub strong{color:var(--ink);font-weight:500}
+
+.hero-actions{
+  display:flex;gap:0.9rem;flex-wrap:wrap;
+  animation:fadeUp 0.7s 0.4s ease both;
+  position:relative;z-index:1;
+}
+
+.btn-p{
+  background:var(--ink);
+  color:#fff;border:none;padding:0.85rem 2rem;border-radius:100px;
+  font-family:'DM Sans',sans-serif;font-weight:500;font-size:0.88rem;
+  cursor:pointer;transition:all 0.3s;
+  text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;
+}
+.btn-p:hover{background:var(--acc);transform:translateY(-2px);box-shadow:0 8px 30px var(--glow)}
+.btn-s{
+  background:transparent;
+  border:1.5px solid var(--border2);
+  color:var(--ink);padding:0.85rem 2rem;border-radius:100px;
+  font-family:'DM Sans',sans-serif;font-weight:400;font-size:0.88rem;
+  cursor:pointer;transition:all 0.3s;
+  text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;
+}
+.btn-s:hover{border-color:var(--acc);color:var(--acc);transform:translateY(-2px)}
+
+.scroll-hint{
+  margin-top:4rem;
+  display:flex;align-items:center;gap:1rem;
+  color:var(--dim);font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;
+  animation:fadeUp 1s 1.2s ease both;
+  position:relative;z-index:1;
+}
+.scroll-line{width:40px;height:1px;background:linear-gradient(to right,var(--dim),transparent)}
+
+/* ---------- SECTIONS ---------- */
+section{position:relative;z-index:1}
+.section-wrap{padding:7rem 3.5rem;max-width:1200px;margin:0 auto}
+
+.sec-eyebrow{
+  font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--acc);font-weight:500;margin-bottom:0.8rem;
+  display:flex;align-items:center;gap:0.75rem;
+}
+.sec-eyebrow::before{content:'';width:24px;height:1px;background:var(--acc);flex-shrink:0}
+.sec-title{
+  font-family:'Syne',sans-serif;font-size:clamp(1.9rem,3.5vw,2.8rem);
+  font-weight:800;letter-spacing:-0.025em;margin-bottom:3.5rem;line-height:1.1;
+  color:var(--ink);
+}
+.sec-title .acc{
+  background:linear-gradient(110deg,var(--acc),var(--acc2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+/* ---------- GLASS CARD MIXIN ---------- */
+.glass{
+  background:rgba(255,255,255,0.6);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid rgba(255,255,255,0.85);
+  box-shadow:0 8px 32px rgba(37,99,235,0.06),0 2px 8px rgba(0,0,0,0.04);
+  border-radius:16px;
+  position:relative;
+  overflow:hidden;
+}
+.glass::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.5) 0%,rgba(255,255,255,0.1) 100%);
+  pointer-events:none;
+}
+
+/* ---------- ABOUT ---------- */
+.about-layout{display:grid;grid-template-columns:1fr 1.05fr;gap:4.5rem;align-items:start}
+
+/* GLASSMORPHISM PHOTO CARD — the centerpiece */
+.about-photo-glass{
+  width:100%;
+  padding:1.5rem;
+  margin-bottom:1.5rem;
+}
+.about-photo-inner{
+  width:100%;
+  aspect-ratio:4/5;
+  border-radius:12px;
+  overflow:hidden;
+  position:relative;
+  background:linear-gradient(160deg,rgba(37,99,235,0.08),rgba(6,182,212,0.05));
+}
+.about-photo-inner img{
+  width:100%;height:100%;object-fit:cover;object-position:top center;display:block;
+}
+/* Holographic overlay on the photo — like image 1 */
+.photo-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,
+    rgba(37,99,235,0.12) 0%,
+    transparent 40%,
+    rgba(6,182,212,0.08) 100%
+  );
+  pointer-events:none;
+}
+/* Corner brackets — tech aesthetic from image 1 */
+.photo-bracket{
+  position:absolute;width:20px;height:20px;
+  border-color:rgba(37,99,235,0.5);border-style:solid;
+}
+.photo-bracket.tl{top:10px;left:10px;border-width:2px 0 0 2px}
+.photo-bracket.tr{top:10px;right:10px;border-width:2px 2px 0 0}
+.photo-bracket.bl{bottom:10px;left:10px;border-width:0 0 2px 2px}
+.photo-bracket.br{bottom:10px;right:10px;border-width:0 2px 2px 0}
+
+/* scan line on photo */
+.photo-scanline{
+  position:absolute;left:0;right:0;height:1px;
+  background:linear-gradient(to right,transparent,rgba(37,99,235,0.4),transparent);
+  animation:scan 3s ease-in-out infinite;
+}
+@keyframes scan{0%{top:10%}100%{top:90%}}
+
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:0.8rem}
+.stat{
+  padding:1.2rem 1rem;border-radius:12px;text-align:center;
+  transition:transform 0.3s,box-shadow 0.3s;
+}
+.stat:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(37,99,235,0.1)}
+.stat-n{
+  font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.stat-l{color:var(--muted);font-size:0.75rem;margin-top:0.15rem;font-weight:300}
+
+.about-text{color:var(--muted);line-height:1.85;font-size:0.97rem;font-weight:300}
+.about-text p{margin-bottom:1.1rem}
+.about-text strong{color:var(--ink);font-weight:500}
+
+/* ---------- SKILLS ---------- */
+#skills{
+  background:rgba(37,99,235,0.02);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+.skills-bento{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem}
+.sk{
+  padding:1.6rem;border-radius:14px;
+  transition:all 0.3s;
+}
+.sk:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(37,99,235,0.1)}
+.sk-label{
+  font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--acc2);font-weight:500;margin-bottom:0.5rem;
+}
+.sk-name{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;margin-bottom:0.75rem;color:var(--ink)}
+.tags{display:flex;flex-wrap:wrap;gap:0.4rem}
+.tag{
+  background:rgba(37,99,235,0.07);border:1px solid rgba(37,99,235,0.12);
+  color:var(--acc);padding:0.2rem 0.65rem;border-radius:100px;
+  font-size:0.71rem;font-weight:400;
+}
+
+/* ---------- PROJECTS ---------- */
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:1.25rem}
+.proj{
+  border-radius:16px;overflow:hidden;
+  transition:all 0.35s;
+}
+.proj:hover{transform:translateY(-6px);box-shadow:0 24px 60px rgba(37,99,235,0.12)}
+
+/* GLASSMORPHISM MOCKUP — like image 1 */
+.proj-mockup{
+  height:200px;
+  position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.mockup-bg{
+  position:absolute;inset:0;
+}
+/* The HUD frame — referencing image 1's bracket/frame aesthetic */
+.mockup-frame{
+  position:relative;z-index:2;
+  width:calc(100% - 2rem);
+  height:calc(100% - 1.5rem);
+  border:1px solid rgba(37,99,235,0.25);
+  border-radius:4px;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+/* corner clips like image 1 */
+.mockup-frame::before,.mockup-frame::after{
+  content:'';position:absolute;
+  width:14px;height:14px;
+  border-color:rgba(37,99,235,0.6);border-style:solid;
+}
+.mockup-frame::before{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:3px 0 0 0}
+.mockup-frame::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 3px 0}
+.mockup-extra-br{position:absolute;top:-1px;right:-1px;width:14px;height:14px;border-top:2px solid rgba(37,99,235,0.6);border-right:2px solid rgba(37,99,235,0.6);border-radius:0 3px 0 0}
+.mockup-extra-bl{position:absolute;bottom:-1px;left:-1px;width:14px;height:14px;border-bottom:2px solid rgba(37,99,235,0.6);border-left:2px solid rgba(37,99,235,0.6);border-radius:0 0 0 3px}
+
+.mockup-bar{
+  background:rgba(37,99,235,0.08);
+  border-bottom:1px solid rgba(37,99,235,0.15);
+  padding:0.3rem 0.75rem;
+  display:flex;align-items:center;gap:0.4rem;
+  flex-shrink:0;
+}
+.mockup-dot{width:5px;height:5px;border-radius:50%}
+.mockup-dot:nth-child(1){background:rgba(37,99,235,0.5)}
+.mockup-dot:nth-child(2){background:rgba(6,182,212,0.5)}
+.mockup-dot:nth-child(3){background:rgba(129,140,248,0.5)}
+
+.mockup-content{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:1rem;
+  background:rgba(255,255,255,0.04);
+  backdrop-filter:blur(8px);
+  flex-direction:column;gap:0.4rem;
+}
+.mockup-label{
+  font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--acc);font-weight:600;
+}
+.mockup-hint{font-size:0.7rem;color:var(--dim);text-align:center;line-height:1.5;max-width:200px}
+
+.proj-featured{grid-column:span 2}
+.proj-featured .proj-mockup{height:240px}
+
+.proj-body{padding:1.4rem}
+.proj-title{font-family:'Syne',sans-serif;font-size:1.02rem;font-weight:700;margin-bottom:0.4rem;color:var(--ink)}
+.proj-desc{color:var(--muted);font-size:0.85rem;line-height:1.65;margin-bottom:0.9rem;font-weight:300}
+.proj-stack{display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:1rem}
+.proj-links{display:flex;gap:0.6rem;flex-wrap:wrap}
+.lbtn{
+  display:inline-flex;align-items:center;gap:0.35rem;
+  padding:0.4rem 0.9rem;border-radius:100px;font-size:0.75rem;font-weight:500;
+  text-decoration:none;transition:all 0.2s;
+}
+.lb-p{background:var(--ink);color:#fff}
+.lb-p:hover{background:var(--acc)}
+.lb-s{border:1.5px solid var(--border2);color:var(--muted)}
+.lb-s:hover{border-color:var(--acc);color:var(--acc)}
+
+/* ---------- EXPERIENCE ---------- */
+#experience{
+  background:rgba(6,182,212,0.015);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+.xp-layout{display:grid;grid-template-columns:1fr 1.6fr;gap:5rem;align-items:start}
+.xp-nav{position:sticky;top:6rem}
+.xp-intro{color:var(--muted);font-size:0.95rem;line-height:1.8;font-weight:300;margin-top:1rem;max-width:300px}
+.timeline{position:relative;padding-left:1.5rem}
+.timeline::before{
+  content:'';position:absolute;left:0;top:4px;bottom:4px;width:1px;
+  background:linear-gradient(to bottom,var(--acc),var(--acc2),transparent 90%);
+}
+.xp-item{position:relative;margin-bottom:2.75rem}
+.xp-item::before{
+  content:'';position:absolute;left:-1.9rem;top:0.45rem;
+  width:9px;height:9px;border-radius:50%;
+  background:var(--bg);border:1.5px solid var(--acc);
+  box-shadow:0 0 12px var(--glow);
+}
+.xp-date{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--acc2);font-weight:500;margin-bottom:0.3rem}
+.xp-role{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:0.15rem;color:var(--ink)}
+.xp-org{color:var(--muted);font-size:0.85rem;margin-bottom:0.7rem;font-weight:300}
+.xp-bullets{list-style:none;padding:0}
+.xp-bullets li{
+  color:var(--muted);font-size:0.85rem;line-height:1.7;font-weight:300;
+  padding-left:1rem;position:relative;margin-bottom:0.35rem;
+}
+.xp-bullets li::before{content:'–';position:absolute;left:0;color:var(--acc);opacity:0.6}
+
+/* ---------- CONTACT ---------- */
+.contact-layout{display:grid;grid-template-columns:1fr 1.15fr;gap:5rem;align-items:start}
+.contact-intro{color:var(--muted);font-size:1rem;line-height:1.8;font-weight:300;max-width:380px;margin-top:1rem}
+.contact-details{margin-top:2.5rem;display:flex;flex-direction:column;gap:0.75rem}
+.c-link{
+  display:flex;align-items:center;gap:0.9rem;
+  color:var(--muted);text-decoration:none;font-size:0.88rem;font-weight:300;
+  padding:0.75rem 1rem;
+  border:1px solid transparent;border-radius:10px;
+  transition:all 0.25s;
+}
+.c-link:hover{color:var(--ink);border-color:var(--border);background:rgba(255,255,255,0.6)}
+.c-link svg{color:var(--acc);flex-shrink:0}
+
+/* Glass contact form */
+.contact-form{padding:2.5rem;border-radius:20px}
+.cf{display:flex;flex-direction:column;gap:1rem}
+.fg{display:flex;flex-direction:column;gap:0.35rem}
+.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+label{font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+input,textarea{
+  background:rgba(255,255,255,0.6);
+  border:1px solid var(--border);
+  color:var(--ink);padding:0.8rem 1rem;border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:300;
+  outline:none;transition:border-color 0.2s,box-shadow 0.2s;resize:vertical;
+}
+input::placeholder,textarea::placeholder{color:var(--dim);opacity:0.7}
+input:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(37,99,235,0.08)}
+.cf-submit{
+  background:var(--ink);
+  color:#fff;border:none;padding:0.9rem;border-radius:100px;
+  font-family:'DM Sans',sans-serif;font-weight:500;font-size:0.9rem;
+  cursor:pointer;transition:all 0.3s;letter-spacing:0.04em;
+  margin-top:0.25rem;width:100%;
+}
+.cf-submit:hover{background:var(--acc);transform:translateY(-2px);box-shadow:0 8px 30px var(--glow)}
+
+/* ---------- FOOTER ---------- */
+footer{
+  text-align:center;padding:2rem 3.5rem;
+  border-top:1px solid var(--border);
+  color:var(--dim);font-size:0.8rem;font-weight:300;
+  position:relative;z-index:1;letter-spacing:0.05em;
+}
+
+/* ---------- ANIMATIONS ---------- */
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity 0.7s ease,transform 0.7s ease}
+.reveal.visible{opacity:1;transform:none}
+.d1{transition-delay:0.1s}.d2{transition-delay:0.2s}.d3{transition-delay:0.3s}
+
+/* ---------- RESPONSIVE ---------- */
+@media(max-width:1024px){
+  #three-canvas{width:100%;opacity:0.4;top:auto;bottom:0;height:50vh}
+  .about-layout,.xp-layout,.contact-layout{grid-template-columns:1fr}
+  .proj-featured{grid-column:span 1}
+  .sk-wide,.sk-med,.sk-narrow{grid-column:span 6 !important}
+}
+@media(max-width:768px){
+  nav{padding:1rem 1.5rem}
+  .nav-links{display:none}
+  .section-wrap{padding:5rem 1.5rem}
+  #hero{padding:8rem 1.5rem 4rem}
+  .hero-bg-text{display:none}
+  .fg-row{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- THREE.JS 3D CANVAS -->
+<canvas id="three-canvas"></canvas>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo">arij<span class="logo-accent">.</span></a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">
+    <span class="nav-cta-dot"></span>
+    Open to internships
+  </a>
+</nav>
+
+<!-- HERO -->
+<section id="hero" style="position:relative;overflow:visible">
+
+  <!-- Behind-text giant word like sohub -->
+  <div class="hero-bg-text">CHABBOUH</div>
+
+  <div class="hero-badge">
+    
+    Available — Tunis, Tunisia
+  </div>
+
+  <div class="hero-name">
+    <span class="line1">ARIJ</span>
+    <span class="line2">CHABBOUH</span>
+  </div>
+
+  <p class="hero-role">
+    Software Engineer <span>/</span> Full-Stack <span>/</span> ENICarthage
+  </p>
+
+  <p class="hero-sub">
+    Second-year Computer Engineering student building things that actually work 
+    from <strong>React frontends</strong> to <strong>Spring Boot APIs</strong>,
+    with an eye on <strong>AI</strong> and the discipline of someone who survived CPGE.
+  </p>
+
+  <div class="hero-actions">
+    <a href="#projects" class="btn-p">See my work</a>
+    <a href="mailto:arij.chabbouh@enicar.ucar.tn" class="btn-s">Get in touch</a>
+  </div>
+
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    scroll to explore
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="section" style="background:rgba(255,255,255,0.3);border-top:1px solid var(--border)">
+  <div class="section-wrap">
+    <div class="about-layout">
+      <div class="reveal">
+        <!-- GLASSMORPHISM PHOTO CARD -->
+        <div class="glass about-photo-glass">
+          <div class="about-photo-inner">
+            <img src="portrait.jpg" alt="Arij Chabbouh"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+            <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:0.5rem;color:var(--dim);font-size:0.8rem;text-align:center;padding:2rem;font-family:monospace">
+              portrait.jpg
+            </div>
+            <div class="photo-overlay"></div>
+            <div class="photo-scanline"></div>
+            <div class="photo-bracket tl"></div>
+            <div class="photo-bracket tr"></div>
+            <div class="photo-bracket bl"></div>
+            <div class="photo-bracket br"></div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="stat glass reveal d1">
+            <div class="stat-n">2nd</div>
+            <div class="stat-l">Year ENICarthage</div>
+          </div>
+          <div class="stat glass reveal d2">
+            <div class="stat-n">5+</div>
+            <div class="stat-l">Projects shipped</div>
+          </div>
+          <div class="stat glass reveal d3">
+            <div class="stat-n">2</div>
+            <div class="stat-l">Student orgs</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal d1">
+        <div class="sec-eyebrow">About</div>
+        <h2 class="sec-title">I build things.<br>I also care how <span class="acc">they look.</span></h2>
+        <div class="about-text">
+          <p>I'm Arij — a Computer Engineering student at <strong>ENICarthage</strong>, coming out of two years of Classes Préparatoires at IPEI Nabeul. CPGE taught me to work under pressure and think rigorously. ENICarthage taught me to ship.</p>
+          <p>My technical home is the full stack: <strong>React on the frontend</strong>, <strong>Java + Spring Boot on the backend</strong>, Oracle and REST APIs in the middle. I built my first real production app at Aftercode — a complete web platform called BeTech, from wireframe to deployment.</p>
+          <p>I'm drawn to problems where the technical and the visual intersect — which is probably why I ended up doing UI/UX work alongside backend development, and why I picked up <strong>Figma</strong> before most of my classmates picked up Docker.</p>
+          <p>Currently exploring <strong>machine learning</strong> — my academic project included a TF-IDF cosine similarity engine, and I presented a virtual try-on AI platform at TSYP 12. That's the direction I'm heading.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills" class="section">
+  <div class="section-wrap">
+    <div class="reveal">
+      <div class="sec-eyebrow">Technical Skills</div>
+      <h2 class="sec-title">What I actually <span class="acc">use</span></h2>
+    </div>
+    <div class="skills-bento">
+      <div class="sk glass reveal" style="grid-column:span 4">
+        <div class="sk-label">Frontend</div>
+        <div class="sk-name">Interface Dev</div>
+        <div class="tags">
+          <span class="tag">React</span><span class="tag">Vite</span>
+          <span class="tag">Tailwind</span><span class="tag">Figma</span>
+          <span class="tag">UI/UX</span>
+        </div>
+      </div>
+      <div class="sk glass reveal d1" style="grid-column:span 4">
+        <div class="sk-label">Backend</div>
+        <div class="sk-name">Server & APIs</div>
+        <div class="tags">
+          <span class="tag">Java</span><span class="tag">Spring Boot</span>
+          <span class="tag">REST APIs</span><span class="tag">Postman</span>
+        </div>
+      </div>
+      <div class="sk glass reveal d2" style="grid-column:span 4">
+        <div class="sk-label">Database</div>
+        <div class="sk-name">Data Layer</div>
+        <div class="tags">
+          <span class="tag">Oracle DB</span><span class="tag">PL/SQL</span>
+          <span class="tag">SQL Developer</span>
+        </div>
+      </div>
+      <div class="sk glass reveal" style="grid-column:span 3">
+        <div class="sk-label">AI & ML</div>
+        <div class="sk-name">Intelligent Systems</div>
+        <div class="tags">
+          <span class="tag">TF-IDF</span><span class="tag">Cosine Similarity</span>
+          <span class="tag">Python Flask</span><span class="tag">LLM Research</span>
+        </div>
+      </div>
+      <div class="sk glass reveal d1" style="grid-column:span 3">
+        <div class="sk-label">Mobile</div>
+        <div class="sk-name">Android</div>
+        <div class="tags">
+          <span class="tag">Android Studio</span><span class="tag">Java (Android)</span>
+        </div>
+      </div>
+      <div class="sk glass reveal d2" style="grid-column:span 6">
+        <div class="sk-label">DevOps & Networks</div>
+        <div class="sk-name">Workflow & Infrastructure</div>
+        <div class="tags">
+          <span class="tag">Git</span><span class="tag">GitHub</span>
+          <span class="tag">CI/CD</span><span class="tag">CCNA 2 Certified</span>
+          <span class="tag">Switching</span><span class="tag">Routing</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects" class="section" style="background:rgba(255,255,255,0.3);border-top:1px solid var(--border)">
+  <div class="section-wrap">
+    <div class="reveal">
+      <div class="sec-eyebrow">Projects</div>
+      <h2 class="sec-title">Selected <span class="acc">work</span></h2>
+    </div>
+    <div class="proj-grid">
+
+      <!-- BeTech — featured -->
+      <div class="proj glass proj-featured reveal">
+        <div class="proj-mockup">
+          <div class="mockup-bg" style="background:linear-gradient(135deg,rgba(37,99,235,0.05) 0%,rgba(6,182,212,0.04) 100%)"></div>
+          <div class="mockup-frame">
+            <div class="mockup-extra-br"></div><div class="mockup-extra-bl"></div>
+            <div class="mockup-bar">
+              <div class="mockup-dot"></div>
+              <div class="mockup-dot"></div>
+              <div class="mockup-dot"></div>
+            </div>
+            <div class="mockup-content">
+              <img src="pfa-mockup.png" alt="BeTech" style="width:100%;height:100%;object-fit:cover;border-radius:0 0 4px 4px;position:absolute;top:0;left:0;display:block"
+                onerror="this.style.display='none'"/>
+              <div class="mockup-label">BeTech Platform</div>
+              <div class="mockup-hint">Production web app — Aftercode internship 2025</div>
+            </div>
+          </div>
+        </div>
+        <div class="proj-body">
+          <div class="proj-title">BeTech — Production Web Platform</div>
+          <p class="proj-desc">Full production web app built for a real tech sector client at Aftercode. Owned the entire React frontend — wireframe through deployment.</p>
+          <div class="proj-stack">
+            <span class="tag">React</span><span class="tag">Vite</span>
+            <span class="tag">Tailwind CSS</span><span class="tag">Production</span>
+          </div>
+          <div class="proj-links">
+            <a href="#" class="lbtn lb-p">Live site</a>
+            <a href="#" class="lbtn lb-s">GitHub</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Academic Defense -->
+      <div class="proj glass reveal d1">
+        <div class="proj-mockup">
+          <div class="mockup-bg" style="background:linear-gradient(135deg,rgba(129,140,248,0.06),rgba(37,99,235,0.04))"></div>
+          <div class="mockup-frame">
+            <div class="mockup-extra-br"></div><div class="mockup-extra-bl"></div>
+            <div class="mockup-bar">
+              <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+            </div>
+            <div class="mockup-content">
+              <div class="mockup-label">Defense Management</div>
+              <div class="mockup-hint">Spring Boot + React + TF-IDF AI</div>
+            </div>
+          </div>
+        </div>
+        <div class="proj-body">
+          <div class="proj-title">Academic Defense Management</div>
+          <p class="proj-desc">Full-stack system for scheduling university thesis defenses. Spring Boot REST API, React JSX frontend, TF-IDF supervisor recommendation engine, JWT auth.</p>
+          <div class="proj-stack">
+            <span class="tag">Java</span><span class="tag">Spring Boot</span>
+            <span class="tag">React</span><span class="tag">Oracle DB</span><span class="tag">TF-IDF</span>
+          </div>
+          <div class="proj-links"><a href="#" class="lbtn lb-s">GitHub</a></div>
+        </div>
+      </div>
+
+      <!-- The Hood -->
+      <div class="proj glass reveal">
+        <div class="proj-mockup">
+          <div class="mockup-bg" style="background:linear-gradient(135deg,rgba(6,182,212,0.06),rgba(37,99,235,0.04))"></div>
+          <div class="mockup-frame">
+            <div class="mockup-extra-br"></div><div class="mockup-extra-bl"></div>
+            <div class="mockup-bar">
+              <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+            </div>
+            <div class="mockup-content">
+              <div class="mockup-label">The Hood</div>
+              <div class="mockup-hint">Restaurant web interface via Melkart JE</div>
+            </div>
+          </div>
+        </div>
+        <div class="proj-body">
+          <div class="proj-title">The Hood — Restaurant Interface</div>
+          <p class="proj-desc">Frontend lead through Melkart Junior Entreprise. Full cycle: Figma UI/UX, wireframing, final integration.</p>
+          <div class="proj-stack">
+            <span class="tag">React</span><span class="tag">Figma</span><span class="tag">UI/UX</span>
+          </div>
+          <div class="proj-links"><a href="#" class="lbtn lb-s">GitHub</a></div>
+        </div>
+      </div>
+
+      <!-- Android -->
+      <div class="proj glass reveal d1">
+        <div class="proj-mockup">
+          <div class="mockup-bg" style="background:linear-gradient(135deg,rgba(37,99,235,0.05),rgba(129,140,248,0.04))"></div>
+          <div class="mockup-frame">
+            <div class="mockup-extra-br"></div><div class="mockup-extra-bl"></div>
+            <div class="mockup-bar">
+              <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+            </div>
+            <div class="mockup-content">
+              <div class="mockup-label">Delivery App</div>
+              <div class="mockup-hint">Android — real-time order tracking</div>
+            </div>
+          </div>
+        </div>
+        <div class="proj-body">
+          <div class="proj-title">Delivery Management — Android</div>
+          <p class="proj-desc">Figma UX design, then end-to-end in Android Studio: real-time order tracking, driver assignment, full delivery lifecycle.</p>
+          <div class="proj-stack">
+            <span class="tag">Android Studio</span><span class="tag">Java</span><span class="tag">Figma</span>
+          </div>
+          <div class="proj-links"><a href="#" class="lbtn lb-s">GitHub</a></div>
+        </div>
+      </div>
+
+      <!-- Oracle -->
+      <div class="proj glass reveal d2">
+        <div class="proj-mockup">
+          <div class="mockup-bg" style="background:linear-gradient(135deg,rgba(6,182,212,0.05),rgba(37,99,235,0.04))"></div>
+          <div class="mockup-frame">
+            <div class="mockup-extra-br"></div><div class="mockup-extra-bl"></div>
+            <div class="mockup-bar">
+              <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+            </div>
+            <div class="mockup-content">
+              <div class="mockup-label">Oracle PL/SQL</div>
+              <div class="mockup-hint">Full DB design with triggers & packages</div>
+            </div>
+          </div>
+        </div>
+        <div class="proj-body">
+          <div class="proj-title">Oracle Delivery DB — PL/SQL</div>
+          <p class="proj-desc">Full database design: sequences, tables, indexes, triggers, packages. Java interface with role-based access and trigger validation.</p>
+          <div class="proj-stack">
+            <span class="tag">Oracle PL/SQL</span><span class="tag">Java</span><span class="tag">SQL Developer</span>
+          </div>
+          <div class="proj-links"><a href="#" class="lbtn lb-s">GitHub</a></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience" class="section">
+  <div class="section-wrap">
+    <div class="xp-layout">
+      <div class="xp-nav reveal">
+        <div class="sec-eyebrow">Experience</div>
+        <h2 class="sec-title">Where<br>I've <span class="acc">been</span></h2>
+        <p class="xp-intro">Two years of CPGE, one internship in production, one Junior Entreprise project, an IEEE presentation, and a CCNA cert along the way. Still early — but everything here is real.</p>
+      </div>
+      <div class="timeline">
+        <div class="xp-item reveal">
+          <div class="xp-date">Summer 2025 — 2 months</div>
+          <div class="xp-role">Software Engineering Intern</div>
+          <div class="xp-org">Aftercode</div>
+          <ul class="xp-bullets">
+            <li>Built BeTech — a full production web platform for a real tech sector client.</li>
+            <li>Owned the entire React frontend: wireframe, Tailwind implementation, responsive design, deployment.</li>
+          </ul>
+        </div>
+        <div class="xp-item reveal d1">
+          <div class="xp-date">2024 — Present</div>
+          <div class="xp-role">Projects & Business Division</div>
+          <div class="xp-org">Melkart Junior Entreprise — ENICarthage</div>
+          <ul class="xp-bullets">
+            <li>Frontend lead on The Hood restaurant web interface (UI/UX, wireframing, full integration).</li>
+            <li>Commercial outreach: in-person prospecting, pitch presentations to partner companies.</li>
+          </ul>
+        </div>
+        <div class="xp-item reveal d2">
+          <div class="xp-date">2024 — Present</div>
+          <div class="xp-role">Member</div>
+          <div class="xp-org">IEEE ENICAR Student Branch</div>
+          <ul class="xp-bullets">
+            <li>Participated in TSYP 12 (Tunisian Students and Young Professionals Congress).</li>
+            <li>Presented ZEN — an AI-powered virtual try-on platform  to a jury of industry professionals.</li>
+          </ul>
+        </div>
+        <div class="xp-item reveal">
+          <div class="xp-date">2024 — Present</div>
+          <div class="xp-role">Computer Engineering Student — 2nd Year</div>
+          <div class="xp-org">École Nationale d'Ingénieurs de Carthage</div>
+          <ul class="xp-bullets">
+            <li>Java, Spring Boot, Oracle PL/SQL, REST APIs, mobile development, networks.</li>
+            <li>CCNA 2 certified — Switching, Routing and Wireless Essentials.</li>
+          </ul>
+        </div>
+        <div class="xp-item reveal d1">
+          <div class="xp-date">2022 — 2024</div>
+          <div class="xp-role">Classes Préparatoires aux Grandes Écoles</div>
+          <div class="xp-org">IPEI Nabeul</div>
+          <ul class="xp-bullets">
+            <li>Two intensive years of mathematics, physics and engineering fundamentals.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="section" style="background:rgba(255,255,255,0.3);border-top:1px solid var(--border)">
+  <div class="section-wrap">
+    <div class="contact-layout">
+      <div class="reveal">
+        <div class="sec-eyebrow">Contact</div>
+        <h2 class="sec-title">Let's<br><span class="acc">talk.</span></h2>
+        <p class="contact-intro">Looking for an intern who can ship a full-stack feature, design the interface, and ask the right questions? I'm open to summer internships and collaborations in software engineering and AI.</p>
+        <div class="contact-details">
+          <a href="mailto:arij.chabbouh@enicar.ucar.tn" class="c-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            arij.chabbouh@enicar.ucar.tn
+          </a>
+          <a href="tel:+21629600218" class="c-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 010 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+            +216 29 600 218
+          </a>
+          <a href="https://linkedin.com/in/arij-chabbouh" target="_blank" rel="noopener" class="c-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            linkedin.com/in/arij-chabbouh
+          </a>
+        </div>
+      </div>
+      <div class="glass contact-form reveal d1">
+     <form class="cf" id="contactForm">
+        
+          <div class="fg-row">
+            <div class="fg">
+              <label for="name">Name</label>
+              <input type="text" id="name" placeholder="Your name" required/>
+            </div>
+            <div class="fg">
+              <label for="email">Email</label>
+              <input type="email" id="email" placeholder="your@email.com" required/>
+            </div>
+          </div>
+          <div class="fg">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" placeholder="Internship / Collaboration / Other"/>
+          </div>
+          <div class="fg">
+            <label for="message">Message</label>
+            <textarea id="message" rows="5" placeholder="Tell me about the opportunity..." required></textarea>
+          </div>
+          <button type="submit" class="cf-submit" id="submitBtn">Send message →</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>Designed & built by Arij Chabbouh — 2025</footer>
+
+<!-- THREE.JS from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ============================================================
+// THREE.JS 3D SCROLL OBJECT
+// ============================================================
+(function() {
+  const canvas = document.getElementById('three-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0, 0, 5);
+
+  function resize() {
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // MATERIALS
+  const matWire = new THREE.MeshBasicMaterial({
+    color: 0x2563EB,
+    wireframe: true,
+    opacity: 0.18,
+    transparent: true
+  });
+  const matGlass = new THREE.MeshPhongMaterial({
+    color: 0xEEF4FF,
+    emissive: 0x1a3a8f,
+    emissiveIntensity: 0.12,
+    shininess: 120,
+    opacity: 0.55,
+    transparent: true,
+    side: THREE.FrontSide,
+  });
+  const matEdge = new THREE.LineBasicMaterial({
+    color: 0x06B6D4,
+    opacity: 0.35,
+    transparent: true
+  });
+
+  // INNER SPHERE (solid glass-like)
+  const sphereGeo = new THREE.IcosahedronGeometry(1.3, 1);
+  const sphere = new THREE.Mesh(sphereGeo, matGlass);
+  scene.add(sphere);
+
+  // OUTER WIREFRAME
+  const wireGeo = new THREE.IcosahedronGeometry(1.7, 1);
+  const wire = new THREE.Mesh(wireGeo, matWire);
+  scene.add(wire);
+
+  // TORUS RING 1
+  const torus1 = new THREE.Mesh(
+    new THREE.TorusGeometry(2.1, 0.012, 8, 60),
+    new THREE.MeshBasicMaterial({ color: 0x2563EB, opacity: 0.3, transparent: true })
+  );
+  torus1.rotation.x = Math.PI / 2;
+  scene.add(torus1);
+
+  // TORUS RING 2 (tilted)
+  const torus2 = new THREE.Mesh(
+    new THREE.TorusGeometry(2.4, 0.008, 8, 60),
+    new THREE.MeshBasicMaterial({ color: 0x06B6D4, opacity: 0.2, transparent: true })
+  );
+  torus2.rotation.x = 0.8;
+  torus2.rotation.z = 0.4;
+  scene.add(torus2);
+
+  // SMALL ORBITING DOTS
+  const dotMat = new THREE.MeshBasicMaterial({ color: 0x2563EB });
+  const dots = [];
+  for (let i = 0; i < 5; i++) {
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), dotMat.clone());
+    dots.push({ mesh: dot, angle: (i / 5) * Math.PI * 2, radius: 2.1 + Math.random() * 0.4, speed: 0.3 + Math.random() * 0.3, y: (Math.random() - 0.5) * 1.5 });
+    scene.add(dot);
+  }
+
+  // LIGHTING
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambientLight);
+  const blueLight = new THREE.PointLight(0x2563EB, 2, 10);
+  blueLight.position.set(3, 2, 3);
+  scene.add(blueLight);
+  const cyanLight = new THREE.PointLight(0x06B6D4, 1.5, 8);
+  cyanLight.position.set(-3, -1, 2);
+  scene.add(cyanLight);
+
+  // SCROLL TRACKING
+  let scrollY = 0;
+  let scrollProgress = 0;
+  window.addEventListener('scroll', () => {
+    scrollY = window.scrollY;
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollProgress = scrollY / maxScroll;
+  });
+
+  // MOUSE TRACKING
+  let mouseX = 0, mouseY = 0;
+  window.addEventListener('mousemove', e => {
+    mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+    mouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
+  });
+
+  const clock = new THREE.Clock();
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const t = clock.getElapsedTime();
+
+    // Base rotation
+    sphere.rotation.x = t * 0.08;
+    sphere.rotation.y = t * 0.12;
+    wire.rotation.x = -t * 0.06;
+    wire.rotation.y = t * 0.09;
+    torus1.rotation.z = t * 0.05;
+    torus2.rotation.y = t * 0.04;
+
+    // Mouse parallax
+    sphere.rotation.y += mouseX * 0.0015;
+    sphere.rotation.x += mouseY * 0.0015;
+    wire.rotation.y += mouseX * 0.001;
+
+    // Scroll — move down and scale as user scrolls
+    const scrollOffset = scrollProgress * -3.5;
+    sphere.position.y = scrollOffset * 0.5;
+    wire.position.y = scrollOffset * 0.5;
+    torus1.position.y = scrollOffset * 0.6;
+    torus2.position.y = scrollOffset * 0.6;
+
+    // Scale slightly based on scroll
+    const sc = 1 - scrollProgress * 0.3;
+    sphere.scale.setScalar(sc);
+    wire.scale.setScalar(sc * 1.05);
+    torus1.scale.setScalar(sc);
+    torus2.scale.setScalar(sc);
+
+    // Opacity fade as scroll progresses
+    matGlass.opacity = Math.max(0, 0.55 - scrollProgress * 0.8);
+    matWire.opacity = Math.max(0, 0.18 - scrollProgress * 0.25);
+
+    // Camera slight tilt on scroll
+    camera.position.x = mouseX * 0.3;
+    camera.position.y = mouseY * 0.2;
+    camera.lookAt(0, scrollOffset * 0.3, 0);
+
+    // Orbiting dots
+    dots.forEach((d, i) => {
+      d.angle += d.speed * 0.008;
+      d.mesh.position.x = Math.cos(d.angle) * d.radius;
+      d.mesh.position.z = Math.sin(d.angle) * d.radius;
+      d.mesh.position.y = d.y + scrollOffset * 0.5;
+      d.mesh.material.opacity = Math.max(0, 0.8 - scrollProgress);
+      d.mesh.material.transparent = true;
+    });
+
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+// ============================================================
+// SCROLL REVEAL
+// ============================================================
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// ============================================================
+// FORM
+// ============================================================
+
+document.getElementById('contactForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+
+  const data = {
+    name: document.getElementById('name').value,
+    email: document.getElementById('email').value,
+    subject: document.getElementById('subject').value,
+    message: document.getElementById('message').value,
+  };
+
+  try {
+    const res = await fetch('https://formspree.io/f/xnjyoalz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      btn.textContent = 'Sent ✓';
+      btn.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)';
+      this.reset();
+      setTimeout(() => { btn.textContent = 'Send message →'; btn.style.background = ''; btn.disabled = false; }, 3000);
+    } else {
+      btn.textContent = 'Error — try again';
+      btn.style.background = '#dc2626';
+      setTimeout(() => { btn.textContent = 'Send message →'; btn.style.background = ''; btn.disabled = false; }, 3000);
+    }
+  } catch {
+    btn.textContent = 'Network error';
+    btn.disabled = false;
+  }
+});
+
+</script>
+</body>
+</html>
