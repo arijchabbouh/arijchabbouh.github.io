@@ -1,721 +1,940 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Arij Chabbouh — Software Engineer</title>
-<link rel="icon" type="image/png" href="icon.png"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<title>FixIt Soutenance IHM</title>
+<meta name="description" content="Présentation zoomable de FixIt : utilisateurs et personas, storyboards, arbre des tâches décoré avec opérateurs UAN, démarche et évaluation.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@500;600&family=Caveat:wght@600;700&display=swap">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* Concept : une carte zoomable. Le fond est l'écran de l'app (vert forêt) ; les diapos sont des cartes claires posées dessus.
+   Plan général → partie (tuile) → diapo, comme un zoom de caméra. Palette tirée de l'app FixIt. */
 :root{
-  --bg:#F2F4FA;--bg2:#EAECF5;
-  --surface:rgba(255,255,255,0.7);--surface2:rgba(255,255,255,0.5);
-  --border:rgba(180,190,220,0.4);--border2:rgba(100,120,200,0.2);
-  --ink:#0A0F2C;--ink2:#1A2040;--muted:#6B7599;--dim:#9AA3C2;
-  --acc:#2563EB;--acc2:#06B6D4;--acc3:#818CF8;
-  --glow:rgba(37,99,235,0.18);--glow2:rgba(6,182,212,0.15);
+  --forest:#1F2E2B; --forest2:#172320; --forest3:#2A3C38; --mist:#A9BDB7; --snow:#EAF2EF;
+  --mint:#7FBFB3; --mintd:#2B7A6C; --mintl:#E1F0EC;
+  --paper:#F5F7F3; --card:#FFFFFF; --ink:#1C2A27; --mut:#5A6763; --line:#D5DDD8;
+  --amber:#E2A33C; --amberd:#8E560A; --amberl:#FBEFD9;
+  --leaf:#6FA046; --leafl:#E7F2DC; --red:#C2483B; --redl:#F8E2DE; --sys:#EBEFEC;
+  --fd:'Bitter',Georgia,'Times New Roman',serif;
+  --fb:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --fh:'Caveat','Segoe Print','Comic Sans MS',cursive;
+  color-scheme:dark;
 }
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;overflow-x:hidden;line-height:1.65}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--forest2);color:var(--snow);font-family:var(--fb)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:4px solid var(--mint);outline-offset:3px}
+#vp{position:fixed;inset:0;overflow:hidden;background:radial-gradient(circle at 50% 40%,var(--forest) 0,var(--forest2) 70%);touch-action:none}
+#vp::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(127,191,179,.13) 1.5px,transparent 1.5px);background-size:34px 34px;pointer-events:none}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;transition:transform 1s cubic-bezier(.66,0,.3,1)}
+@media (prefers-reduced-motion:reduce){#world{transition:none!important}}
 
-/* 3D CANVAS */
-#three-canvas{position:fixed;top:0;right:0;width:55%;height:100vh;pointer-events:none;z-index:0;opacity:0.9}
+/* ---------- Plan général ---------- */
+.band{position:absolute;left:0;top:0;width:4040px;height:560px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 40px 40px}
+.band .logo{display:flex;align-items:center;gap:40px}
+.band .mark{width:190px;height:190px;border-radius:52px;background:var(--mint);display:grid;place-items:center}
+.band h1{font:800 230px/0.9 var(--fd);margin:0;color:var(--snow);letter-spacing:-4px}
+.band .sub{font-size:58px;color:var(--mist);margin-top:18px}
+.band .team{text-align:right;font-size:44px;color:var(--mist);line-height:1.45}
+.band .team b{color:var(--snow);display:block;font-size:52px}
+.tile{position:absolute;width:1920px;height:1080px;border-radius:64px;background:var(--forest);border:3px solid var(--forest3);box-shadow:0 40px 90px rgba(0,0,0,.35);cursor:pointer;transition:border-color .3s}
+.tile:hover,.tile.cur{border-color:var(--mint)}
+.tile>.num{position:absolute;left:92px;top:40px;font:800 250px/1 var(--fd);color:var(--mint);letter-spacing:-6px}
+.tile>h2{position:absolute;left:470px;top:92px;margin:0;font:800 100px/1 var(--fd);color:var(--snow);letter-spacing:-1.5px}
+.tile>.tdesc{position:absolute;left:474px;top:214px;width:1350px;font-size:36px;color:var(--mist);line-height:1.3}
+.mini{position:absolute;border-radius:8px;overflow:hidden;box-shadow:0 14px 30px rgba(0,0,0,.35);outline:0 solid var(--mint);transition:outline-width .2s}
+.mini:hover{outline-width:6px}
+.mini .slide{transform-origin:0 0}
+.mlab{position:absolute;font-size:24px;color:var(--mist);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mlab b{color:var(--mint);font-family:var(--fm);margin-right:10px}
+.mini.cur{outline:0}
+.mini:not(.cur) .slide{pointer-events:none}
+.mini:not(.cur){cursor:pointer}
 
-/* NAV */
-nav{position:fixed;top:0;width:100%;z-index:300;padding:1.2rem 3.5rem;display:flex;justify-content:space-between;align-items:center;background:rgba(242,244,250,0.72);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.35rem;letter-spacing:-0.03em;color:var(--ink);text-decoration:none}
-.logo-accent{color:var(--acc)}
-.nav-links{display:flex;gap:2.5rem;list-style:none}
-.nav-links a{text-decoration:none;color:var(--muted);font-size:0.78rem;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;transition:color 0.25s}
-.nav-links a:hover{color:var(--ink)}
-.nav-right{display:flex;align-items:center;gap:0.75rem}
-.nav-cta{background:var(--ink);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.25s;letter-spacing:0.03em;text-decoration:none;display:flex;align-items:center;gap:0.5rem}
-.nav-cta-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:pulse 2s ease-in-out infinite}
-.nav-cta:hover{background:var(--acc);transform:translateY(-1px)}
-.nav-cv{background:transparent;color:var(--ink);border:1.5px solid var(--border2);padding:0.6rem 1.2rem;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.25s;text-decoration:none;display:flex;align-items:center;gap:0.4rem}
-.nav-cv:hover{border-color:var(--acc);color:var(--acc);transform:translateY(-1px)}
-/* Hamburger */
-.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;background:none;border:none;z-index:400}
-.hamburger span{display:block;width:22px;height:2px;background:var(--ink);border-radius:2px;transition:all 0.3s}
-.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
-.hamburger.open span:nth-child(2){opacity:0}
-.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
-.mobile-menu{display:none;position:fixed;top:0;left:0;width:100%;height:100vh;background:rgba(242,244,250,0.97);backdrop-filter:blur(20px);z-index:350;flex-direction:column;align-items:center;justify-content:center;gap:2rem}
-.mobile-menu.open{display:flex}
-.mobile-menu a{text-decoration:none;color:var(--ink);font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;letter-spacing:-0.02em;transition:color 0.2s}
-.mobile-menu a:hover{color:var(--acc)}
-.mobile-menu-actions{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin-top:1rem}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.4)}}
+/* ---------- Diapo ---------- */
+.slide{position:absolute;left:0;top:0;width:1920px;height:1080px;background:var(--paper);color:var(--ink);overflow:hidden;padding:64px 88px 56px;display:flex;flex-direction:column;gap:26px;font-size:24px;line-height:1.35}
+.slide h2{font:800 64px/1.04 var(--fd);margin:0;letter-spacing:-.5px;text-wrap:balance}
+.slide h3{font:800 32px/1.15 var(--fd);margin:0}
+.slide p{margin:0}
+.k{font:700 19px/1 var(--fb);letter-spacing:.16em;text-transform:uppercase;color:var(--mintd);margin-bottom:12px}
+.lead{font-size:27px;color:var(--mut);max-width:1500px;margin-top:12px}
+.mutd{color:var(--mut)}
+.sfoot{position:absolute;right:56px;bottom:22px;font:600 17px var(--fm);color:var(--mut)}
+.card{background:var(--card);border:2px solid var(--line);border-radius:26px;padding:24px 28px;min-width:0}
+.row{display:flex;gap:24px;min-height:0}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.fill{flex:1;min-height:0}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:99px;font-size:19px;font-weight:700;background:var(--sys);color:var(--ink);white-space:nowrap}
+.chip.m{background:var(--mintl);color:var(--mintd)}
+.chip.a{background:var(--amberl);color:var(--amberd)}
+.chip.r{background:var(--redl);color:var(--red)}
+.chip.d{background:var(--forest);color:var(--snow)}
+.go{border:0;background:var(--mintl);color:var(--mintd);font-weight:700;font-size:19px;border-radius:99px;padding:5px 14px}
+.go:hover{background:var(--mint);color:var(--forest)}
+.mono{font-family:var(--fm)}
+ul.l{margin:0;padding-left:26px}
+ul.l li{margin-bottom:6px}
+table.t{border-collapse:collapse;width:100%;font-size:21px}
+table.t th{font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);text-align:left;padding:10px 14px;border-bottom:2px solid var(--ink)}
+table.t td{padding:10px 14px;border-bottom:1.5px solid var(--line);vertical-align:top}
+table.t tr.g td{background:var(--forest);color:var(--snow);font:700 16px var(--fb);letter-spacing:.14em;text-transform:uppercase;padding:7px 14px;border:0}
+table.t td.dec{color:var(--mintd);font-weight:600}
 
-/* HERO */
-#hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:10rem 3.5rem 5rem;max-width:760px}
-.hero-badge{display:inline-flex;align-items:center;gap:0.55rem;background:rgba(37,99,235,0.07);border:1px solid rgba(37,99,235,0.2);padding:0.35rem 1rem;border-radius:100px;font-size:0.72rem;font-weight:500;color:var(--acc);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2.5rem;animation:fadeUp 0.7s ease both}
-.badge-dot{width:5px;height:5px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:pulse 2s infinite}
-.hero-bg-text{position:absolute;left:-0.05em;top:50%;transform:translateY(-56%);font-family:'Syne',sans-serif;font-size:clamp(5rem,14vw,13rem);font-weight:800;letter-spacing:-0.055em;color:transparent;-webkit-text-stroke:1.5px rgba(8,24,58,0.08);white-space:nowrap;pointer-events:none;user-select:none;z-index:0;line-height:1}
-.hero-name{font-family:'Syne',sans-serif;font-size:clamp(2.6rem,6.2vw,5.8rem);font-weight:800;line-height:0.94;letter-spacing:-0.04em;margin-bottom:1.5rem;animation:fadeUp 0.7s 0.1s ease both;position:relative;z-index:1}
-.hero-name .line1{display:block;color:var(--ink)}
-.hero-name .line2{display:block;font-size:clamp(2rem,6vw,4rem);background:linear-gradient(110deg,var(--acc) 0%,var(--acc2) 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero-role{font-size:0.82rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--dim);font-weight:400;margin-bottom:2rem;display:flex;align-items:center;gap:0.8rem;animation:fadeUp 0.7s 0.2s ease both;position:relative;z-index:1}
-.hero-role span{color:var(--border);font-size:0.9em}
-.hero-sub{font-size:1.05rem;color:var(--muted);max-width:460px;line-height:1.78;margin-bottom:3rem;font-weight:300;animation:fadeUp 0.7s 0.3s ease both;position:relative;z-index:1}
-.hero-sub strong{color:var(--ink);font-weight:500}
-.hero-actions{display:flex;gap:0.9rem;flex-wrap:wrap;animation:fadeUp 0.7s 0.4s ease both;position:relative;z-index:1}
-.btn-p{background:var(--ink);color:#fff;border:none;padding:0.85rem 2rem;border-radius:100px;font-family:'DM Sans',sans-serif;font-weight:500;font-size:0.88rem;cursor:pointer;transition:all 0.3s;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem}
-.btn-p:hover{background:var(--acc);transform:translateY(-2px);box-shadow:0 8px 30px var(--glow)}
-.btn-s{background:transparent;border:1.5px solid var(--border2);color:var(--ink);padding:0.85rem 2rem;border-radius:100px;font-family:'DM Sans',sans-serif;font-weight:400;font-size:0.88rem;cursor:pointer;transition:all 0.3s;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem}
-.btn-s:hover{border-color:var(--acc);color:var(--acc);transform:translateY(-2px)}
-.btn-cv{background:rgba(37,99,235,0.07);border:1.5px solid rgba(37,99,235,0.2);color:var(--acc);padding:0.85rem 2rem;border-radius:100px;font-family:'DM Sans',sans-serif;font-weight:500;font-size:0.88rem;cursor:pointer;transition:all 0.3s;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem}
-.btn-cv:hover{background:var(--acc);color:#fff;transform:translateY(-2px);box-shadow:0 8px 30px var(--glow)}
-.scroll-hint{margin-top:4rem;display:flex;align-items:center;gap:1rem;color:var(--dim);font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;animation:fadeUp 1s 1.2s ease both;position:relative;z-index:1}
-.scroll-line{width:40px;height:1px;background:linear-gradient(to right,var(--dim),transparent)}
+/* Personas */
+.pers{display:grid;grid-template-columns:560px 1fr;gap:34px;height:100%}
+.pid{background:var(--forest);color:var(--snow);border-radius:34px;padding:34px;display:flex;flex-direction:column;gap:18px;position:relative;overflow:hidden}
+.pid .ph{display:flex;gap:24px;align-items:center}
+.pid .ph svg{width:220px;height:220px;flex-shrink:0}
+.pid h3{font:800 58px/1 var(--fd);color:var(--snow)}
+.pid .seg{font-size:20px;color:var(--mint);font-weight:700;margin-top:10px}
+.pid dl{display:grid;grid-template-columns:150px 1fr;gap:8px 14px;margin:0;font-size:21px}
+.pid dt{color:var(--mist)}
+.pid dd{margin:0;font-weight:600}
+.pid .ctx{font-size:21px;color:#D5E3DF;border-top:1.5px solid var(--forest3);padding-top:16px}
+.pid .tr{display:flex;flex-wrap:wrap;gap:8px}
+.pid .tr span{border:1.5px solid var(--mint);color:var(--mint);border-radius:99px;padding:3px 13px;font-size:18px;font-weight:700}
+.pr{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-content:start;min-width:0}
+.pq{grid-column:1/-1;font:italic 700 34px/1.25 var(--fd);color:var(--ink);padding:6px 0 4px 26px;border-left:8px solid var(--mint)}
+.pb{background:var(--card);border:2px solid var(--line);border-radius:24px;padding:20px 24px;min-width:0}
+.pb h4{margin:0 0 10px;font:700 17px var(--fb);letter-spacing:.14em;text-transform:uppercase;color:var(--mintd)}
+.pb ul{margin:0;padding-left:24px;font-size:21px}
+.pb li{margin-bottom:5px}
+.pb.full{grid-column:1/-1}
+.pb.impl{background:var(--mintl);border-color:var(--mint)}
+.pb.impl ul{columns:2;column-gap:40px}
+.pb.fr li::marker{color:var(--red)}
+.bar{display:grid;grid-template-columns:230px 1fr 64px;align-items:center;gap:12px;font-size:19px;font-weight:600;margin-bottom:9px}
+.bar .tk{height:13px;border-radius:7px;background:var(--sys);overflow:hidden}
+.bar .tk i{display:block;height:100%;border-radius:7px;background:var(--mintd)}
+.bar.a .tk i{background:var(--amber)}
+.bar b{text-align:right;font-family:var(--fm);font-size:18px}
+.dots{display:grid;grid-template-columns:230px 1fr;align-items:center;gap:12px;font-size:19px;font-weight:600;margin-top:6px}
+.dots span{letter-spacing:6px;color:var(--mintd);font-size:22px}
 
-/* SECTIONS */
-section{position:relative;z-index:1}
-.section-wrap{padding:7rem 3.5rem;max-width:1200px;margin:0 auto}
-.sec-eyebrow{font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--acc);font-weight:500;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.75rem}
-.sec-eyebrow::before{content:'';width:24px;height:1px;background:var(--acc);flex-shrink:0}
-.sec-title{font-family:'Syne',sans-serif;font-size:clamp(1.9rem,3.5vw,2.8rem);font-weight:800;letter-spacing:-0.025em;margin-bottom:3.5rem;line-height:1.1;color:var(--ink)}
-.sec-title .acc{background:linear-gradient(110deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+/* Storyboards */
+.sbh{display:flex;gap:26px;align-items:center}
+.sbh .av{width:128px;height:128px;flex-shrink:0}
+.sbh .acts{margin-left:auto;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.acts .three{display:flex;gap:8px;align-items:center;font-size:18px;color:var(--mut);font-weight:600}
+.acts .three i{font-style:normal;color:var(--mintd)}
+.board{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:22px 24px;flex:1;min-height:0}
+.pnl{display:flex;flex-direction:column;min-height:0;background:var(--card);border:3px solid var(--ink);border-radius:20px;overflow:hidden;box-shadow:6px 6px 0 var(--ink)}
+.scn{position:relative;flex:1;min-height:0;border-bottom:3px solid var(--ink);overflow:hidden}
+.scn svg{position:absolute;inset:0;width:100%;height:100%}
+.ptag{position:absolute;left:12px;top:12px;background:var(--red);color:#fff;font:700 15px var(--fb);letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:6px}
+.pn{position:absolute;left:12px;bottom:10px;width:40px;height:40px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font:800 22px var(--fd)}
+.emo{position:absolute;right:10px;top:10px;display:flex;align-items:center;gap:6px;background:#fff;border:2px solid var(--ink);border-radius:99px;padding:2px 12px 2px 3px;font:700 16px var(--fb)}
+.emo svg{position:static;width:34px;height:34px}
+.cap{font:700 28px/1.12 var(--fh);color:var(--ink);padding:9px 16px 11px;min-height:86px}
 
-/* GLASS */
-.glass{background:rgba(255,255,255,0.6);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,0.85);box-shadow:0 8px 32px rgba(37,99,235,0.06),0 2px 8px rgba(0,0,0,0.04);border-radius:16px;position:relative;overflow:hidden}
-.glass::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.5) 0%,rgba(255,255,255,0.1) 100%);pointer-events:none}
+/* Arbres */
+.tbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:19px}
+.tbar .sp{flex:1}
+.sc{border:2px solid var(--line);background:#fff;border-radius:99px;padding:5px 15px;font-weight:700;font-size:18px}
+.sc[aria-pressed="true"]{background:var(--forest);color:var(--snow);border-color:var(--forest)}
+.tl{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-weight:600;font-size:17px}
+.tl b{font-family:var(--fm);color:var(--mintd);font-size:18px}
+.tarea{flex:1;min-height:0;position:relative}
+.tarea>svg{width:100%;height:100%;display:block}
+.tn{cursor:pointer}
+.tn .bx{fill:#fff;stroke:var(--line);stroke-width:2}
+.tn.comp .bx{stroke:var(--ink);stroke-width:2.4}
+.tn.sys .bx{fill:var(--sys)}
+.tn.opt .bx{stroke-dasharray:8 6}
+.tn.cut .bx{fill:var(--mintl);stroke:var(--mintd)}
+.tn .st{fill:var(--mintd)}
+.tn.r-con .st{fill:var(--amber)}
+.tn.r-adm .st{fill:var(--ink)}
+.tn.r-all .st{fill:var(--mist)}
+.tn text{font-family:var(--fb);fill:var(--ink)}
+.tn .nm{font-size:16.5px;font-weight:600}
+.tn.comp .nm,.tn.cut .nm{font-weight:700}
+.tn .id{font:600 13px var(--fm);fill:var(--mut)}
+.tn .star{font:800 26px var(--fb);fill:var(--red)}
+.tn .bd rect{fill:var(--ink)}.tn.sys .bd rect{fill:var(--mut)}
+.tn .bd text{fill:#fff;font:700 11px var(--fm)}
+.tn .dc{font:600 12.5px var(--fm);fill:var(--mut)}
+.tn .dc .h{fill:var(--red)}.tn .dc .m{fill:var(--amberd)}.tn .dc .f{fill:var(--leaf)}
+.tn .lk{font:700 13px var(--fb);fill:var(--mintd)}
+.tn:hover .bx{stroke:var(--mintd);stroke-width:3}
+.tn.sel .bx{stroke:var(--mintd);stroke-width:4}
+.tn.hl .bx{fill:var(--amberl);stroke:var(--amberd);stroke-width:3}
+.tn .pb2 circle{fill:var(--amberd)}.tn .pb2 text{fill:#fff;font:800 14px var(--fb)}
+.ed{fill:none;stroke:var(--mut);stroke-width:2}
+.op rect{fill:var(--paper);stroke:var(--mintd);stroke-width:1.6}
+.op text{font:600 15px var(--fm);fill:var(--mintd)}
+.pop{position:absolute;right:0;top:0;width:560px;max-height:100%;overflow:auto;background:#fff;border:3px solid var(--ink);border-radius:26px;box-shadow:10px 10px 0 rgba(28,42,39,.12);padding:22px 26px;font-size:19px;z-index:5}
+.pop .x{position:absolute;right:14px;top:12px;border:0;background:var(--sys);border-radius:50%;width:40px;height:40px;font-size:22px;line-height:1}
+.pop h3{font-size:28px;margin:4px 46px 6px 0}
+.pop .uan{font:500 16px/1.4 var(--fm);background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0;word-break:break-word}
+.pop .dg{display:grid;grid-template-columns:170px 1fr;border-top:1.5px solid var(--line)}
+.pop .dg>div{padding:6px 0;border-bottom:1.5px solid var(--line)}
+.pop .dg .kk{color:var(--mut);font-weight:700;font-size:16px;padding-right:10px}
+.pop .ih{font-size:14px;color:var(--mut);font-style:italic}
+.lvH{color:var(--red);font-weight:800}.lvM{color:var(--amberd);font-weight:800}.lvF{color:var(--leaf);font-weight:800}
 
-/* ABOUT */
-.about-layout{display:grid;grid-template-columns:1fr 1.05fr;gap:4.5rem;align-items:start}
-.about-photo-glass{width:100%;padding:1.5rem;margin-bottom:1.5rem}
-.about-photo-inner{width:100%;aspect-ratio:4/5;border-radius:12px;overflow:hidden;position:relative;background:linear-gradient(160deg,rgba(37,99,235,0.08),rgba(6,182,212,0.05))}
-.about-photo-inner img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
-.photo-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(37,99,235,0.12) 0%,transparent 40%,rgba(6,182,212,0.08) 100%);pointer-events:none}
-.photo-bracket{position:absolute;width:20px;height:20px;border-color:rgba(37,99,235,0.5);border-style:solid}
-.photo-bracket.tl{top:10px;left:10px;border-width:2px 0 0 2px}
-.photo-bracket.tr{top:10px;right:10px;border-width:2px 2px 0 0}
-.photo-bracket.bl{bottom:10px;left:10px;border-width:0 0 2px 2px}
-.photo-bracket.br{bottom:10px;right:10px;border-width:0 2px 2px 0}
-.photo-scanline{position:absolute;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,rgba(37,99,235,0.4),transparent);animation:scan 3s ease-in-out infinite}
-@keyframes scan{0%{top:10%}100%{top:90%}}
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:0.8rem}
-.stat{padding:1.2rem 1rem;border-radius:12px;text-align:center;transition:transform 0.3s,box-shadow 0.3s}
-.stat:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(37,99,235,0.1)}
-.stat-n{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.stat-l{color:var(--muted);font-size:0.75rem;margin-top:0.15rem;font-weight:300}
-.about-text{color:var(--muted);line-height:1.85;font-size:0.97rem;font-weight:300}
-.about-text p{margin-bottom:1.1rem}
-.about-text strong{color:var(--ink);font-weight:500}
+/* App mock */
+.app{width:430px;height:860px;border-radius:56px;background:#1E2B28;border:10px solid #0E1513;color:#EAF2EF;position:relative;padding:58px 24px 24px;font-family:var(--fb);box-shadow:0 30px 60px rgba(28,42,39,.25);flex-shrink:0}
+.app .nt{position:absolute;left:50%;top:0;transform:translateX(-50%);width:150px;height:34px;background:#0E1513;border-radius:0 0 22px 22px}
+.app .tm{position:absolute;left:28px;top:28px;font-weight:700;font-size:15px}
+.app .lg{position:absolute;right:20px;top:20px;display:flex;background:#16211F;border-radius:99px;padding:3px}
+.app .lg span{padding:4px 12px;border-radius:99px;font-weight:700;font-size:14px;color:#A9BDB7}
+.app .lg span.on{background:#24332F;color:var(--mint)}
+.app h4{font:700 30px/1.1 var(--fd);margin:14px 0 8px}
+.app .s{font-size:17px;color:#BFD0CB;line-height:1.35}
+.app .cta{margin:22px 0 26px;background:#7FBFB3;color:#14201D;border-radius:18px;padding:18px;text-align:center;font-weight:700;font-size:18px}
+.app .sec{font-size:14px;letter-spacing:.12em;font-weight:700;color:#9DB2AC;margin-bottom:6px}
+.app .it{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid #2C3D39;align-items:flex-start}
+.app .ic{width:46px;height:46px;border-radius:12px;background:#24332F;flex-shrink:0;display:grid;place-items:center}
+.app .it b{font-size:17px;display:block}
+.app .it small{font-size:14px;color:#A9BDB7}
+.app .bg{margin-left:auto;font-size:13px;font-weight:700;border-radius:99px;padding:4px 10px;white-space:nowrap}
+.app .bg.a{background:#3B2B12;color:#E2A33C}.app .bg.g{background:#1F3320;color:#8CC26A}
+.app .hist{margin-top:20px;background:#16211F;border-radius:16px;padding:16px;text-align:center;font-weight:700;font-size:16px}
+.pin{position:absolute;width:42px;height:42px;border-radius:50%;background:var(--amber);color:var(--forest);font:800 22px var(--fd);display:grid;place-items:center;border:3px solid var(--forest);z-index:3}
+.ann{display:grid;grid-template-columns:48px 1fr;gap:14px;align-items:start}
+.ann .n{width:42px;height:42px;border-radius:50%;background:var(--amber);color:var(--forest);font:800 22px var(--fd);display:grid;place-items:center}
+.ann p{font-size:21px}
+.ann small{display:block;font:600 15px var(--fm);color:var(--mut);margin-top:2px}
 
-/* SKILLS */
-#skills{background:rgba(37,99,235,0.02);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-.skills-bento{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem}
-.sk{padding:1.6rem;border-radius:14px;transition:all 0.3s}
-.sk:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(37,99,235,0.1)}
-.sk-label{font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--acc2);font-weight:500;margin-bottom:0.5rem}
-.sk-name{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;margin-bottom:0.75rem;color:var(--ink)}
-.tags{display:flex;flex-wrap:wrap;gap:0.4rem}
-.tag{background:rgba(37,99,235,0.07);border:1px solid rgba(37,99,235,0.12);color:var(--acc);padding:0.2rem 0.65rem;border-radius:100px;font-size:0.71rem;font-weight:400}
-
-/* PROJECTS */
-.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:1.25rem}
-.proj{border-radius:16px;overflow:hidden;transition:all 0.35s}
-.proj:hover{transform:translateY(-6px);box-shadow:0 24px 60px rgba(37,99,235,0.12)}
-.proj-mockup{height:220px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
-.mockup-bg{position:absolute;inset:0}
-.mockup-frame{position:relative;z-index:2;width:calc(100% - 2rem);height:calc(100% - 1.5rem);border:1px solid rgba(37,99,235,0.25);border-radius:4px;display:flex;flex-direction:column;overflow:hidden}
-.mockup-frame::before,.mockup-frame::after{content:'';position:absolute;width:14px;height:14px;border-color:rgba(37,99,235,0.6);border-style:solid}
-.mockup-frame::before{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:3px 0 0 0}
-.mockup-frame::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 3px 0}
-.mockup-extra-br{position:absolute;top:-1px;right:-1px;width:14px;height:14px;border-top:2px solid rgba(37,99,235,0.6);border-right:2px solid rgba(37,99,235,0.6);border-radius:0 3px 0 0}
-.mockup-extra-bl{position:absolute;bottom:-1px;left:-1px;width:14px;height:14px;border-bottom:2px solid rgba(37,99,235,0.6);border-left:2px solid rgba(37,99,235,0.6);border-radius:0 0 0 3px}
-.mockup-bar{background:rgba(37,99,235,0.08);border-bottom:1px solid rgba(37,99,235,0.15);padding:0.3rem 0.75rem;display:flex;align-items:center;gap:0.4rem;flex-shrink:0}
-.mockup-dot{width:5px;height:5px;border-radius:50%}
-.mockup-dot:nth-child(1){background:rgba(37,99,235,0.5)}
-.mockup-dot:nth-child(2){background:rgba(6,182,212,0.5)}
-.mockup-dot:nth-child(3){background:rgba(129,140,248,0.5)}
-.mockup-content{flex:1;display:flex;align-items:center;justify-content:center;padding:0.5rem;background:rgba(255,255,255,0.04);backdrop-filter:blur(8px);position:relative;overflow:hidden}
-.mockup-content img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
-.mockup-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.4rem;background:rgba(255,255,255,0.0)}
-.mockup-label{font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--acc);font-weight:600;background:rgba(255,255,255,0.85);padding:0.2rem 0.6rem;border-radius:100px}
-.mockup-hint{font-size:0.7rem;color:var(--dim);text-align:center;line-height:1.5;max-width:200px;background:rgba(255,255,255,0.8);padding:0.15rem 0.5rem;border-radius:6px}
-
-/* Phone mockup for delivery app */
-.phone-duo{display:flex;gap:0.75rem;align-items:flex-end;justify-content:center;height:100%;padding:0.5rem 0.25rem}
-.phone-frame{flex:1;max-width:90px;height:100%;background:#0A0F2C;border-radius:14px;overflow:hidden;border:2px solid rgba(37,99,235,0.3);display:flex;flex-direction:column;position:relative;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
-.phone-notch{width:40px;height:8px;background:#0A0F2C;border-radius:0 0 8px 8px;margin:0 auto;position:relative;z-index:2;flex-shrink:0}
-.phone-screen{flex:1;overflow:hidden;position:relative}
-.phone-screen img{width:100%;height:100%;object-fit:cover;object-position:top}
-.phone-frame:nth-child(2){transform:translateY(8px)}
-
-.proj-featured{grid-column:span 2}
-.proj-featured .proj-mockup{height:260px}
-.proj-body{padding:1.4rem}
-.proj-title{font-family:'Syne',sans-serif;font-size:1.02rem;font-weight:700;margin-bottom:0.4rem;color:var(--ink)}
-.proj-desc{color:var(--muted);font-size:0.85rem;line-height:1.65;margin-bottom:0.9rem;font-weight:300}
-.proj-stack{display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:1rem}
-.proj-links{display:flex;gap:0.6rem;flex-wrap:wrap}
-.lbtn{display:inline-flex;align-items:center;gap:0.35rem;padding:0.4rem 0.9rem;border-radius:100px;font-size:0.75rem;font-weight:500;text-decoration:none;transition:all 0.2s}
-.lb-p{background:var(--ink);color:#fff}
-.lb-p:hover{background:var(--acc)}
-.lb-s{border:1.5px solid var(--border2);color:var(--muted)}
-.lb-s:hover{border-color:var(--acc);color:var(--acc)}
-
-/* EXPERIENCE */
-#experience{background:rgba(6,182,212,0.015);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-.xp-layout{display:grid;grid-template-columns:1fr 1.6fr;gap:5rem;align-items:start}
-.xp-nav{position:sticky;top:6rem}
-.xp-intro{color:var(--muted);font-size:0.95rem;line-height:1.8;font-weight:300;margin-top:1rem;max-width:300px}
-.timeline{position:relative;padding-left:1.5rem}
-.timeline::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:1px;background:linear-gradient(to bottom,var(--acc),var(--acc2),transparent 90%)}
-.xp-item{position:relative;margin-bottom:2.75rem}
-.xp-item::before{content:'';position:absolute;left:-1.9rem;top:0.45rem;width:9px;height:9px;border-radius:50%;background:var(--bg);border:1.5px solid var(--acc);box-shadow:0 0 12px var(--glow)}
-.xp-date{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--acc2);font-weight:500;margin-bottom:0.3rem}
-.xp-role{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:0.15rem;color:var(--ink)}
-.xp-org{color:var(--muted);font-size:0.85rem;margin-bottom:0.7rem;font-weight:300}
-.xp-bullets{list-style:none;padding:0}
-.xp-bullets li{color:var(--muted);font-size:0.85rem;line-height:1.7;font-weight:300;padding-left:1rem;position:relative;margin-bottom:0.35rem}
-.xp-bullets li::before{content:'–';position:absolute;left:0;color:var(--acc);opacity:0.6}
-
-/* CONTACT */
-.contact-layout{display:grid;grid-template-columns:1fr 1.15fr;gap:5rem;align-items:start}
-.contact-intro{color:var(--muted);font-size:1rem;line-height:1.8;font-weight:300;max-width:380px;margin-top:1rem}
-.contact-details{margin-top:2.5rem;display:flex;flex-direction:column;gap:0.75rem}
-.c-link{display:flex;align-items:center;gap:0.9rem;color:var(--muted);text-decoration:none;font-size:0.88rem;font-weight:300;padding:0.75rem 1rem;border:1px solid transparent;border-radius:10px;transition:all 0.25s}
-.c-link:hover{color:var(--ink);border-color:var(--border);background:rgba(255,255,255,0.6)}
-.c-link svg{color:var(--acc);flex-shrink:0}
-.contact-form{padding:2.5rem;border-radius:20px}
-.cf{display:flex;flex-direction:column;gap:1rem}
-.fg{display:flex;flex-direction:column;gap:0.35rem}
-.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-label{font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
-input,textarea{background:rgba(255,255,255,0.6);border:1px solid var(--border);color:var(--ink);padding:0.8rem 1rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:300;outline:none;transition:border-color 0.2s,box-shadow 0.2s;resize:vertical}
-input::placeholder,textarea::placeholder{color:var(--dim);opacity:0.7}
-input:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(37,99,235,0.08)}
-.cf-submit{background:var(--ink);color:#fff;border:none;padding:0.9rem;border-radius:100px;font-family:'DM Sans',sans-serif;font-weight:500;font-size:0.9rem;cursor:pointer;transition:all 0.3s;letter-spacing:0.04em;margin-top:0.25rem;width:100%}
-.cf-submit:hover{background:var(--acc);transform:translateY(-2px);box-shadow:0 8px 30px var(--glow)}
-
-/* FOOTER */
-footer{text-align:center;padding:2rem 3.5rem;border-top:1px solid var(--border);color:var(--dim);font-size:0.8rem;font-weight:300;position:relative;z-index:1;letter-spacing:0.05em}
-
-/* ANIMATIONS */
-@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
-.reveal{opacity:0;transform:translateY(24px);transition:opacity 0.7s ease,transform 0.7s ease}
-.reveal.visible{opacity:1;transform:none}
-.d1{transition-delay:0.1s}.d2{transition-delay:0.2s}.d3{transition-delay:0.3s}
-
-/* RESPONSIVE */
-@media(max-width:1024px){
-  #three-canvas{width:100%;opacity:0.3;top:auto;bottom:0;height:45vh}
-  .about-layout,.xp-layout,.contact-layout{grid-template-columns:1fr}
-  .proj-featured{grid-column:span 1}
-  .skills-bento [style*="grid-column:span 4"]{grid-column:span 6 !important}
-  .skills-bento [style*="grid-column:span 3"]{grid-column:span 6 !important}
-  .skills-bento [style*="grid-column:span 6"]{grid-column:span 12 !important}
-}
-@media(max-width:768px){
-  nav{padding:1rem 1.25rem}
-  .nav-links,.nav-cv{display:none}
-  .hamburger{display:flex}
-  .section-wrap{padding:4rem 1.25rem}
-  #hero{padding:7rem 1.25rem 3rem;max-width:100%}
-  .hero-bg-text{display:none}
-  .fg-row{grid-template-columns:1fr}
-  .stats-row{grid-template-columns:1fr 1fr}
-  .proj-featured{grid-column:span 1}
-  .proj-grid{grid-template-columns:1fr}
-  .skills-bento{grid-template-columns:1fr 1fr}
-  .skills-bento > *{grid-column:span 1 !important}
-  .xp-layout{grid-template-columns:1fr;gap:2rem}
-  .xp-nav{position:static}
-  .contact-layout{grid-template-columns:1fr;gap:2.5rem}
-  .hero-actions{flex-direction:column;align-items:flex-start}
-  .btn-p,.btn-s,.btn-cv{width:100%;justify-content:center}
-  footer{padding:1.5rem 1.25rem}
-  .nav-right .nav-cta{display:none}
-}
-@media(max-width:480px){
-  .stats-row{grid-template-columns:1fr 1fr}
-  .about-layout{gap:2rem}
-  .skills-bento{grid-template-columns:1fr}
-  .skills-bento > *{grid-column:span 1 !important}
-}
+/* ---------- Barre de navigation ---------- */
+#nav{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:rgba(23,35,32,.92);border:1.5px solid var(--forest3);border-radius:99px;padding:6px;z-index:20;transition:opacity .4s;max-width:calc(100% - 24px)}
+#nav.hide{opacity:0;pointer-events:none}
+#nav button{border:0;background:transparent;color:var(--snow);border-radius:99px;min-width:44px;height:44px;padding:0 14px;font-weight:700;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+#nav button:hover{background:var(--forest3)}
+#nav .lab{font-size:14px;color:var(--mist);padding:0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+#nav .lab b{color:var(--mint);font-family:var(--fm);margin-right:6px}
+#nav .pr{display:flex;gap:4px;padding:0 6px}
+#nav .pr i{width:8px;height:8px;border-radius:50%;background:var(--forest3)}
+#nav .pr i.on{background:var(--mint)}
+#hint{position:fixed;left:50%;top:calc(18px + env(safe-area-inset-top,0px));transform:translateX(-50%);font-size:14px;color:var(--mist);background:rgba(23,35,32,.85);padding:6px 14px;border-radius:99px;z-index:20;transition:opacity .4s;white-space:nowrap}
+#hint.hide{opacity:0}
+@media (max-width:640px){#nav .lab{max-width:34vw}#nav .pr{display:none}}
 </style>
-</head>
-<body>
 
-<canvas id="three-canvas"></canvas>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="#1C2A27" stroke-width="1.4" opacity=".18"/></pattern>
+    <pattern id="tiles" width="34" height="34" patternUnits="userSpaceOnUse"><rect width="34" height="34" fill="#DDE9EA"/><path d="M34 0V34H0" fill="none" stroke="#C3D4D6" stroke-width="2"/></pattern>
+  </defs>
+</svg>
 
-<!-- MOBILE MENU -->
-<div class="mobile-menu" id="mobileMenu">
-  <a href="#about" onclick="closeMobile()">About</a>
-  <a href="#skills" onclick="closeMobile()">Skills</a>
-  <a href="#projects" onclick="closeMobile()">Projects</a>
-  <a href="#experience" onclick="closeMobile()">Experience</a>
-  <a href="#contact" onclick="closeMobile()">Contact</a>
-  <div class="mobile-menu-actions">
-    <a href="Arij_Chabbouh_Cv_Software_Engineer.pdf" download class="btn-cv" onclick="closeMobile()">↓ Download CV</a>
-    <a href="#contact" class="btn-p" onclick="closeMobile()">Hire me</a>
-  </div>
-</div>
-
-<!-- NAV -->
-<nav>
-  <a href="#" class="logo">arij<span class="logo-accent">.</span></a>
-  <ul class="nav-links">
-    <li><a href="#about">About</a></li>
-    <li><a href="#skills">Skills</a></li>
-    <li><a href="#projects">Projects</a></li>
-    <li><a href="#experience">Experience</a></li>
-    <li><a href="#contact">Contact</a></li>
-  </ul>
-  <div class="nav-right">
-    <a href="Arij_Chabbouh_Cv_Software_Engineer.pdf" download class="nav-cv">↓ CV</a>
-    <a href="#contact" class="nav-cta">
-      <span class="nav-cta-dot"></span>
-      Open to internships
-    </a>
-    <button class="hamburger" id="hamburger" aria-label="Menu">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
+<div id="vp"><div id="world"></div></div>
+<div id="hint">Cliquez sur une partie ou appuyez sur → pour commencer</div>
+<nav id="nav" aria-label="Navigation de la présentation">
+  <button type="button" id="nHome" aria-label="Plan général">Plan</button>
+  <button type="button" id="nPrev" aria-label="Précédent">◀</button>
+  <span class="lab" id="nLab" aria-live="polite"></span>
+  <span class="pr" id="nPr"></span>
+  <button type="button" id="nNext" aria-label="Suivant">▶</button>
+  <button type="button" id="nFull" aria-label="Plein écran">⛶</button>
 </nav>
 
-<!-- HERO -->
-<section id="hero" style="position:relative;overflow:visible">
-  <div class="hero-bg-text">CHABBOUH</div>
-  <div class="hero-badge">
-    <span class="badge-dot"></span>
-    Available — Tunis, Tunisia
-  </div>
-  <div class="hero-name">
-    <span class="line1">ARIJ</span>
-    <span class="line2">CHABBOUH</span>
-  </div>
-  <p class="hero-role">
-    Software Engineer <span>/</span> Full-Stack <span>/</span> ENICarthage
-  </p>
-  <p class="hero-sub">
-    Second-year Computer Engineering student building things that actually work
-    from <strong>React frontends</strong> to <strong>Spring Boot APIs</strong>,
-    with an eye on <strong>AI</strong> and the discipline of someone who survived CPGE.
-  </p>
-  <div class="hero-actions">
-    <a href="#projects" class="btn-p">See my work</a>
-    <a href="Arij_Chabbouh_Cv_Software_Engineer.pdf" download class="btn-cv">↓ Download CV</a>
-    <a href="mailto:arij.chabbouh@enicar.ucar.tn" class="btn-s">Get in touch</a>
-  </div>
-  <div class="scroll-hint">
-    <div class="scroll-line"></div>
-    scroll to explore
-  </div>
-</section>
-
-<!-- ABOUT -->
-<section id="about" class="section" style="background:rgba(255,255,255,0.3);border-top:1px solid var(--border)">
-  <div class="section-wrap">
-    <div class="about-layout">
-      <div class="reveal">
-        <div class="glass about-photo-glass">
-          <div class="about-photo-inner">
-            <img src="portrait.jpg" alt="Arij Chabbouh" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-            <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:0.5rem;color:var(--dim);font-size:0.8rem;text-align:center;padding:2rem;font-family:monospace">portrait.jpg</div>
-            <div class="photo-overlay"></div>
-            <div class="photo-scanline"></div>
-            <div class="photo-bracket tl"></div>
-            <div class="photo-bracket tr"></div>
-            <div class="photo-bracket bl"></div>
-            <div class="photo-bracket br"></div>
-          </div>
-        </div>
-        <div class="stats-row">
-          <div class="stat glass reveal d1"><div class="stat-n">2nd</div><div class="stat-l">Year ENICarthage</div></div>
-          <div class="stat glass reveal d2"><div class="stat-n">5+</div><div class="stat-l">Projects shipped</div></div>
-          <div class="stat glass reveal d3"><div class="stat-n">2</div><div class="stat-l">Student orgs</div></div>
-        </div>
-      </div>
-      <div class="reveal d1">
-        <div class="sec-eyebrow">About</div>
-        <h2 class="sec-title">I build things.<br>I also care how <span class="acc">they look.</span></h2>
-        <div class="about-text">
-          <p>I'm Arij — a Computer Engineering student at <strong>ENICarthage</strong>, coming out of two years of Classes Préparatoires at IPEI Nabeul. CPGE taught me to work under pressure and think rigorously. ENICarthage taught me to ship.</p>
-          <p>My technical home is the full stack: <strong>React on the frontend</strong>, <strong>Java + Spring Boot on the backend</strong>, Oracle and REST APIs in the middle. I built my first real production app at Aftercode — a complete web platform called BeTech, from wireframe to deployment.</p>
-          <p>I'm drawn to problems where the technical and the visual intersect — which is probably why I ended up doing UI/UX work alongside backend development, and why I picked up <strong>Figma</strong> before most of my classmates picked up Docker.</p>
-          <p>Currently exploring <strong>machine learning</strong> — my academic project included a TF-IDF cosine similarity engine, and I presented a virtual try-on AI platform at TSYP 12. That's the direction I'm heading.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- SKILLS -->
-<section id="skills" class="section">
-  <div class="section-wrap">
-    <div class="reveal">
-      <div class="sec-eyebrow">Technical Skills</div>
-      <h2 class="sec-title">What I actually <span class="acc">use</span></h2>
-    </div>
-    <div class="skills-bento">
-      <div class="sk glass reveal" style="grid-column:span 4"><div class="sk-label">Frontend</div><div class="sk-name">Interface Dev</div><div class="tags"><span class="tag">React</span><span class="tag">Vite</span><span class="tag">Tailwind</span><span class="tag">Figma</span><span class="tag">UI/UX</span></div></div>
-      <div class="sk glass reveal d1" style="grid-column:span 4"><div class="sk-label">Backend</div><div class="sk-name">Server & APIs</div><div class="tags"><span class="tag">Java</span><span class="tag">Spring Boot</span><span class="tag">REST APIs</span><span class="tag">Postman</span></div></div>
-      <div class="sk glass reveal d2" style="grid-column:span 4"><div class="sk-label">Database</div><div class="sk-name">Data Layer</div><div class="tags"><span class="tag">Oracle DB</span><span class="tag">PL/SQL</span><span class="tag">SQL Developer</span></div></div>
-      <div class="sk glass reveal" style="grid-column:span 3"><div class="sk-label">AI & ML</div><div class="sk-name">Intelligent Systems</div><div class="tags"><span class="tag">TF-IDF</span><span class="tag">Cosine Similarity</span><span class="tag">Python Flask</span><span class="tag">LLM Research</span></div></div>
-      <div class="sk glass reveal d1" style="grid-column:span 3"><div class="sk-label">Mobile</div><div class="sk-name">Android</div><div class="tags"><span class="tag">Android Studio</span><span class="tag">Java (Android)</span></div></div>
-      <div class="sk glass reveal d2" style="grid-column:span 6"><div class="sk-label">DevOps & Networks</div><div class="sk-name">Workflow & Infrastructure</div><div class="tags"><span class="tag">Git</span><span class="tag">GitHub</span><span class="tag">CI/CD</span><span class="tag">CCNA 2 Certified</span><span class="tag">Switching</span><span class="tag">Routing</span></div></div>
-    </div>
-  </div>
-</section>
-
-<!-- PROJECTS -->
-<section id="projects" class="section" style="background:rgba(255,255,255,0.3);border-top:1px solid var(--border)">
-  <div class="section-wrap">
-    <div class="reveal">
-      <div class="sec-eyebrow">Projects</div>
-      <h2 class="sec-title">My<span class="acc">work</span></h2>
-    </div>
-    <div class="proj-grid">
-
-      <!-- BeTech featured -->
-      <div class="proj glass proj-featured reveal">
-        <div class="proj-mockup">
-          <div class="mockup-bg" style="background:linear-gradient(135deg,rgba(37,99,235,0.05),rgba(6,182,212,0.04))"></div>
-          <div class="mockup-frame">
-            <div class="mockup-extra-br"></div><div class="mockup-extra-bl"></div>
-            <div class="mockup-bar"><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div></div>
-            <div class="mockup-content">
-              <img src="betech-mockup.png" alt="BeTech mockup" onerror="this.style.display='none'"/>
-              <div class="mockup-overlay" id="betechOverlay" style="display:none">
-                <div class="mockup-label">BeTech Platform</div>
-                <div class="mockup-hint">Production web app — Aftercode 2025</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="proj-body">
-          <div class="proj-title">BeTech — Production Web Platform</div>
-          <p class="proj-desc">Full production web app built for a real tech sector client at Aftercode. Owned the entire React frontend — wireframe through deployment.</p>
-          <div class="proj-stack"><span class="tag">React</span><span class="tag">Vite</span><span class="tag">Tailwind CSS</span><span class="tag">Production</span></div>
-          <div class="proj-links"><a href="#" class="lbtn lb-p">Live site</a><a href="#" class="lbtn lb-s">GitHub</a></div>
-        </div>
-      </div>
-
-      <!-- Academic Defense -->
-      <div class="proj glass reveal d1">
-        <div class="proj-mockup">
-          <div class="mockup-bg" style="background:linear-gradient(135deg,rgba(129,140,248,0.06),rgba(37,99,235,0.04))"></div>
-          <div class="mockup-frame">
-            <div class="mockup-extra-br"></div><div class="mockup-extra-bl"></div>
-            <div class="mockup-bar"><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div></div>
-            <div class="mockup-content">
-  <img src="pfa-mockup.png" alt="Defense Management" style="width:100%;height:100%;object-fit:cover;object-position:top left;display:block"/>
-</div>
-          </div>
-        </div>
-        <div class="proj-body">
-          <div class="proj-title">Academic Defense Management</div>
-          <p class="proj-desc">Full-stack system for scheduling university thesis defenses. Spring Boot REST API, React JSX frontend, TF-IDF supervisor recommendation engine, JWT auth.</p>
-          <div class="proj-stack"><span class="tag">Java</span><span class="tag">Spring Boot</span><span class="tag">React</span><span class="tag">Oracle DB</span><span class="tag">TF-IDF</span></div>
-          <div class="proj-links"><a href="#" class="lbtn lb-s">GitHub</a></div>
-        </div>
-      </div>
-
-      <!-- The Hood -->
-      <div class="proj glass reveal">
-        <div class="proj-mockup">
-          <div class="mockup-bg" style="background:linear-gradient(135deg,rgba(6,182,212,0.06),rgba(37,99,235,0.04))"></div>
-          <div class="mockup-frame">
-            <div class="mockup-extra-br"></div><div class="mockup-extra-bl"></div>
-            <div class="mockup-bar"><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div></div>
-            <div class="mockup-content">
-              <img src="the-hood-mockup.png" alt="The Hood" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-              <div class="mockup-overlay" style="display:none;position:relative;inset:auto">
-                <div class="mockup-label">The Hood</div>
-                <div class="mockup-hint">Restaurant web interface</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="proj-body">
-          <div class="proj-title">The Hood — Restaurant Interface</div>
-          <p class="proj-desc">Frontend lead through Melkart Junior Entreprise. Full cycle: Figma UI/UX, wireframing, final integration.</p>
-          <div class="proj-stack"><span class="tag">React</span><span class="tag">Figma</span><span class="tag">UI/UX</span></div>
-          <div class="proj-links"><a href="#" class="lbtn lb-s">GitHub</a></div>
-        </div>
-      </div>
-
-      <!-- Android Delivery — dual phone -->
-      <div class="proj glass reveal d1">
-        <div class="proj-mockup">
-          <div class="mockup-bg" style="background:linear-gradient(135deg,rgba(37,99,235,0.07),rgba(129,140,248,0.05))"></div>
-          <div class="mockup-frame">
-            <div class="mockup-extra-br"></div><div class="mockup-extra-bl"></div>
-            <div class="mockup-bar"><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div></div>
-            <div class="mockup-content">
-              <div class="phone-duo">
-                <div class="phone-frame">
-                  <div class="phone-notch"></div>
-                  <div class="phone-screen">
-                    <img src="Delivery-app.png" alt="Delivery app screen 1" onerror="this.style.background='rgba(37,99,235,0.1)'"/>
-                  </div>
-                </div>
-                <div class="phone-frame">
-                  <div class="phone-notch"></div>
-                  <div class="phone-screen">
-                    <img src="Delivery-app-2.png" alt="Delivery app screen 2" onerror="this.style.background='rgba(6,182,212,0.1)'"/>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="proj-body">
-          <div class="proj-title">Delivery Management — Android</div>
-          <p class="proj-desc">Figma UX design, then end-to-end in Android Studio: real-time order tracking, driver assignment, full delivery lifecycle.</p>
-          <div class="proj-stack"><span class="tag">Android Studio</span><span class="tag">Java</span><span class="tag">Figma</span></div>
-          <div class="proj-links"><a href="#" class="lbtn lb-s">GitHub</a></div>
-        </div>
-      </div>
-
-      <!-- Oracle -->
-      <div class="proj glass reveal d2">
-        <div class="proj-mockup">
-          <div class="mockup-bg" style="background:linear-gradient(135deg,rgba(6,182,212,0.05),rgba(37,99,235,0.04))"></div>
-          <div class="mockup-frame">
-            <div class="mockup-extra-br"></div><div class="mockup-extra-bl"></div>
-            <div class="mockup-bar"><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div></div>
-            <div class="mockup-content">
-              <img src="Oracle-mockup.png" alt="Oracle mockup" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-              <div class="mockup-overlay" style="display:none;position:relative;inset:auto">
-                <div class="mockup-label">Oracle PL/SQL</div>
-                <div class="mockup-hint">Full DB design with triggers & packages</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="proj-body">
-          <div class="proj-title">Oracle Delivery DB — PL/SQL</div>
-          <p class="proj-desc">Full database design: sequences, tables, indexes, triggers, packages. Java interface with role-based access and trigger validation.</p>
-          <div class="proj-stack"><span class="tag">Oracle PL/SQL</span><span class="tag">Java</span><span class="tag">SQL Developer</span></div>
-          <div class="proj-links"><a href="#" class="lbtn lb-s">GitHub</a></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- EXPERIENCE -->
-<section id="experience" class="section">
-  <div class="section-wrap">
-    <div class="xp-layout">
-      <div class="xp-nav reveal">
-        <div class="sec-eyebrow">Experience</div>
-        <h2 class="sec-title">Where<br>I've <span class="acc">been</span></h2>
-        <p class="xp-intro">Two years of CPGE, one internship in production, one Junior Entreprise project, an IEEE presentation, and a CCNA cert along the way. Still early — but everything here is real.</p>
-      </div>
-      <div class="timeline">
-        <div class="xp-item reveal">
-          <div class="xp-date">Summer 2025 — 2 months</div>
-          <div class="xp-role">Software Engineering Intern</div>
-          <div class="xp-org">Aftercode</div>
-          <ul class="xp-bullets">
-            <li>Built BeTech — a full production web platform for a real tech sector client.</li>
-            <li>Owned the entire React frontend: wireframe, Tailwind implementation, responsive design, deployment.</li>
-          </ul>
-        </div>
-        <div class="xp-item reveal d1">
-          <div class="xp-date">2024 — Present</div>
-          <div class="xp-role">Projects & Business Division</div>
-          <div class="xp-org">Melkart Junior Entreprise — ENICarthage</div>
-          <ul class="xp-bullets">
-            <li>Frontend lead on The Hood restaurant web interface (UI/UX, wireframing, full integration).</li>
-            <li>Commercial outreach: in-person prospecting, pitch presentations to partner companies.</li>
-          </ul>
-        </div>
-        <div class="xp-item reveal d2">
-          <div class="xp-date">2024 — Present</div>
-          <div class="xp-role">Member</div>
-          <div class="xp-org">IEEE ENICAR Student Branch</div>
-          <ul class="xp-bullets">
-            <li>Participated in TSYP 12 (Tunisian Students and Young Professionals Congress).</li>
-            <li>Presented ZEN — an AI-powered virtual try-on platform to a jury of industry professionals.</li>
-          </ul>
-        </div>
-        <div class="xp-item reveal">
-          <div class="xp-date">2024 — Present</div>
-          <div class="xp-role">Computer Engineering Student — 2nd Year</div>
-          <div class="xp-org">École Nationale d'Ingénieurs de Carthage</div>
-          <ul class="xp-bullets">
-            <li>Java, Spring Boot, Oracle PL/SQL, REST APIs, mobile development, networks.</li>
-            <li>CCNA 2 certified — Switching, Routing and Wireless Essentials.</li>
-          </ul>
-        </div>
-        <div class="xp-item reveal d1">
-          <div class="xp-date">2022 — 2024</div>
-          <div class="xp-role">Classes Préparatoires aux Grandes Écoles</div>
-          <div class="xp-org">IPEI Nabeul</div>
-          <ul class="xp-bullets">
-            <li>Two intensive years of mathematics, physics and engineering fundamentals.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- CONTACT -->
-<section id="contact" class="section" style="background:rgba(255,255,255,0.3);border-top:1px solid var(--border)">
-  <div class="section-wrap">
-    <div class="contact-layout">
-      <div class="reveal">
-        <div class="sec-eyebrow">Contact</div>
-        <h2 class="sec-title">Let's<br><span class="acc">talk.</span></h2>
-        <p class="contact-intro">Looking for an intern who can ship a full-stack feature, design the interface, and ask the right questions? I'm open to summer internships and collaborations in software engineering and AI.</p>
-        <div class="contact-details">
-          <a href="mailto:arij.chabbouh@enicar.ucar.tn" class="c-link">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            arij.chabbouh@enicar.ucar.tn
-          </a>
-          <a href="tel:+21629600218" class="c-link">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 010 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
-            +216 29 600 218
-          </a>
-          <a href="https://www.linkedin.com/in/arij-chabbouh-782a01214/" target="_blank" rel="noopener" class="c-link">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-            linkedin.com/in/arij-chabbouh
-          </a>
-          <a href="CV_Arij_Chabbouh.pdf" download class="c-link">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download CV
-          </a>
-        </div>
-      </div>
-      <div class="glass contact-form reveal d1">
-        <form class="cf" id="contactForm">
-          <div class="fg-row">
-            <div class="fg"><label for="name">Name</label><input type="text" id="name" placeholder="Your name" required/></div>
-            <div class="fg"><label for="email">Email</label><input type="email" id="email" placeholder="your@email.com" required/></div>
-          </div>
-          <div class="fg"><label for="subject">Subject</label><input type="text" id="subject" placeholder="Internship / Collaboration / Other"/></div>
-          <div class="fg"><label for="message">Message</label><textarea id="message" rows="5" placeholder="Tell me about the opportunity..." required></textarea></div>
-          <button type="submit" class="cf-submit" id="submitBtn">Send message →</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</section>
-
-<footer>Designed & built by Arij Chabbouh — 2025</footer>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// Hamburger menu
-const hamburger = document.getElementById('hamburger');
-const mobileMenu = document.getElementById('mobileMenu');
-hamburger.addEventListener('click', () => {
-  hamburger.classList.toggle('open');
-  mobileMenu.classList.toggle('open');
-  document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
-});
-function closeMobile() {
-  hamburger.classList.remove('open');
-  mobileMenu.classList.remove('open');
-  document.body.style.overflow = '';
+/* =====================================================================
+   1. PERSONNAGES DESSINÉS
+   ===================================================================== */
+const K="#1C2A27";
+const CH={
+  salma:{n:"Salma",f:1,skin:"#EDB993",hair:"#2A1A14",hs:"long",shirt:"#7FBFB3",ear:1},
+  youssef:{n:"Youssef",skin:"#C68A60",hair:"#171717",hs:"curly",shirt:"#E2A33C",stub:1},
+  amine:{n:"Amine",skin:"#D9A37C",hair:"#3A2416",hs:"short",shirt:"#4C6A93",gl:"round"},
+  hedi:{n:"Hédi",skin:"#C08058",hair:"#A3A39E",hs:"grey",shirt:"#6FA046",must:1,gl:"rect"},
+  rania:{n:"Rania",f:1,skin:"#E3AE88",hair:"#5A3A26",hs:"bun",shirt:"#2B7A6C",head:1}
+};
+const MOOD={
+  neutral:{b:["M72 70 L90 68","M110 68 L128 70"],e:"dot",m:"M88 112 Q100 118 112 112"},
+  happy:{b:["M72 68 Q81 61 90 66","M110 66 Q119 61 128 68"],e:"dot",m:"M84 108 Q100 128 116 108 Z",mf:1},
+  relief:{b:["M72 67 Q81 63 90 66","M110 66 Q119 63 128 67"],e:"closed",m:"M84 108 Q100 126 116 108 Z",mf:1},
+  worried:{b:["M72 71 L90 63","M110 63 L128 71"],e:"dot",m:"M87 118 Q93 111 100 116 Q107 121 113 114"},
+  stressed:{b:["M72 72 L90 61","M110 61 L128 72"],e:"big",m:"M89 116 Q100 108 111 116 Q100 122 89 116Z",mf:1,sw:1},
+  focus:{b:["M72 66 L90 71","M110 71 L128 66"],e:"small",m:"M90 114 L110 114"},
+  angry:{b:["M71 63 L92 73","M108 73 L129 63"],e:"small",m:"M86 119 Q100 108 114 119"},
+  surprised:{b:["M72 63 Q81 56 90 61","M110 61 Q119 56 128 63"],e:"big",m:"o"},
+  proud:{b:["M72 67 Q81 61 90 65","M110 65 Q119 61 128 67"],e:"closed",m:"M86 109 Q102 124 118 106"}
+};
+const MW={neutral:["serein","sereine"],happy:["content","contente"],relief:["soulagé","soulagée"],worried:["inquiet","inquiète"],stressed:["stressé","stressée"],focus:["concentré","concentrée"],angry:["agacé","agacée"],surprised:["surpris","surprise"],proud:["fier","fière"]};
+function face(c,mood){
+  const C=CH[c],M=MOOD[mood||"neutral"];let s="";
+  const sk=`stroke="${K}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"`;
+  if(C.hs==="long")s+=`<path d="M50 94 C38 34 162 34 150 94 C156 128 162 158 168 190 C132 172 68 172 32 190 C38 158 44 128 50 94Z" fill="${C.hair}" ${sk}/>`;
+  if(C.hs==="bun")s+=`<circle cx="100" cy="32" r="20" fill="${C.hair}" ${sk}/>`;
+  s+=`<path d="M16 202 C20 152 58 134 100 134 C142 134 180 152 184 202Z" fill="${C.shirt}" ${sk}/>`;
+  s+=`<path d="M88 114 L88 140 Q100 150 112 140 L112 114Z" fill="${C.skin}" ${sk}/><path d="M82 138 Q100 158 118 138" fill="none" ${sk}/>`;
+  s+=`<ellipse cx="57" cy="92" rx="8" ry="11" fill="${C.skin}" ${sk}/><ellipse cx="143" cy="92" rx="8" ry="11" fill="${C.skin}" ${sk}/>`;
+  s+=`<ellipse cx="100" cy="86" rx="44" ry="50" fill="${C.skin}" ${sk}/>`;
+  if(C.stub)s+=`<path d="M60 98 C64 132 86 138 100 138 C114 138 136 132 140 98 C130 124 70 124 60 98Z" fill="${K}" opacity=".14"/>`;
+  if(C.hs==="long")s+=`<path d="M55 90 C50 40 100 24 130 40 C148 50 152 72 147 90 C134 66 106 56 90 54 C78 62 63 74 55 90Z" fill="${C.hair}" ${sk}/>`;
+  if(C.hs==="short")s+=`<path d="M55 84 C50 44 86 30 108 33 C134 37 152 56 145 86 C140 66 120 54 100 55 C80 55 64 66 55 84Z" fill="${C.hair}" ${sk}/>`;
+  if(C.hs==="bun")s+=`<path d="M55 86 C52 46 90 34 110 36 C136 40 150 60 145 86 C136 62 112 52 100 52 C84 54 66 64 55 86Z" fill="${C.hair}" ${sk}/>`;
+  if(C.hs==="curly")[[62,72,12],[66,55,13],[80,44,14],[100,39,15],[120,44,14],[134,55,13],[138,72,12],[90,54,11],[110,54,11]].forEach(([x,y,r])=>s+=`<circle cx="${x}" cy="${y}" r="${r}" fill="${C.hair}" stroke="${K}" stroke-width="2.5"/>`);
+  if(C.hs==="grey")s+=`<path d="M57 98 C53 70 64 50 82 44 C72 60 66 78 64 100Z" fill="${C.hair}" ${sk}/><path d="M143 98 C147 70 136 50 118 44 C128 60 134 78 136 100Z" fill="${C.hair}" ${sk}/><path d="M82 42 Q100 36 118 42" fill="none" stroke="${C.hair}" stroke-width="7" stroke-linecap="round"/><path d="M84 60 Q100 56 116 60" fill="none" stroke="${K}" stroke-width="1.8" opacity=".35"/>`;
+  s+=`<circle cx="74" cy="104" r="8" fill="#E57B6E" opacity=".3"/><circle cx="126" cy="104" r="8" fill="#E57B6E" opacity=".3"/>`;
+  s+=M.b.map(d=>`<path d="${d}" fill="none" stroke="${C.hs==="grey"?"#6E6E69":K}" stroke-width="4" stroke-linecap="round"/>`).join("");
+  if(M.e==="closed")s+=`<path d="M75 88 Q82 81 89 88" fill="none" ${sk}/><path d="M111 88 Q118 81 125 88" fill="none" ${sk}/>`;
+  else if(M.e==="big")s+=`<circle cx="82" cy="86" r="8" fill="#fff" stroke="${K}" stroke-width="2.5"/><circle cx="118" cy="86" r="8" fill="#fff" stroke="${K}" stroke-width="2.5"/><circle cx="83" cy="87" r="4" fill="${K}"/><circle cx="119" cy="87" r="4" fill="${K}"/>`;
+  else{const r=M.e==="small"?4:5.2;s+=`<circle cx="82" cy="86" r="${r}" fill="${K}"/><circle cx="118" cy="86" r="${r}" fill="${K}"/><circle cx="83.6" cy="84.4" r="1.6" fill="#fff"/><circle cx="119.6" cy="84.4" r="1.6" fill="#fff"/>`;}
+  s+=`<path d="M100 90 Q95 100 102 102" fill="none" stroke="${K}" stroke-width="2.5" stroke-linecap="round"/>`;
+  if(C.must)s+=`<path d="M84 107 Q92 100 100 106 Q108 100 116 107 Q108 113 100 109 Q92 113 84 107Z" fill="#7C7C77" stroke="${K}" stroke-width="2"/>`;
+  if(M.m==="o")s+=`<ellipse cx="100" cy="117" rx="7" ry="9" fill="#7A2F2A" stroke="${K}" stroke-width="2.5"/>`;
+  else s+=`<path d="${M.m}" fill="${M.mf?"#7A2F2A":"none"}" ${sk}/>`;
+  if(C.gl==="round")s+=`<circle cx="82" cy="87" r="13" fill="#fff" fill-opacity=".18" stroke="${K}" stroke-width="3"/><circle cx="118" cy="87" r="13" fill="#fff" fill-opacity=".18" stroke="${K}" stroke-width="3"/><path d="M95 86 Q100 82 105 86M69 85 L58 82M131 85 L142 82" fill="none" stroke="${K}" stroke-width="3"/>`;
+  if(C.gl==="rect")s+=`<rect x="68" y="79" width="27" height="17" rx="5" fill="#fff" fill-opacity=".18" stroke="${K}" stroke-width="3"/><rect x="105" y="79" width="27" height="17" rx="5" fill="#fff" fill-opacity=".18" stroke="${K}" stroke-width="3"/><path d="M95 85 Q100 82 105 85M68 84 L58 82M132 84 L142 82" fill="none" stroke="${K}" stroke-width="3"/>`;
+  if(C.ear)s+=`<circle cx="56" cy="107" r="4.5" fill="#E2A33C" stroke="${K}" stroke-width="1.5"/><circle cx="144" cy="107" r="4.5" fill="#E2A33C" stroke="${K}" stroke-width="1.5"/>`;
+  if(C.head)s+=`<path d="M52 92 C50 28 150 28 148 92" fill="none" stroke="${K}" stroke-width="6"/><rect x="44" y="80" width="14" height="26" rx="6" fill="${K}"/><rect x="142" y="80" width="14" height="26" rx="6" fill="${K}"/><path d="M146 104 Q150 124 120 124" fill="none" stroke="${K}" stroke-width="3"/><circle cx="118" cy="124" r="4" fill="${K}"/>`;
+  if(M.sw)s+=`<path d="M146 56 Q153 68 146 73 Q139 68 146 56Z" fill="#A9DDF2" stroke="${K}" stroke-width="2"/>`;
+  return s;
 }
+const bust=(c,mood,x,y,s,flip)=>`<g transform="translate(${flip?x+200*s:x} ${y}) scale(${flip?-s:s} ${s})">${face(c,mood)}</g>`;
+let CPN=0;
+function portrait(c,mood,bg){const id="cp"+(CPN++);return `<svg viewBox="0 0 200 200" aria-hidden="true"><defs><clipPath id="${id}"><circle cx="100" cy="100" r="98"/></clipPath></defs><circle cx="100" cy="100" r="98" fill="${bg||"#7FBFB3"}"/><g clip-path="url(#${id})"><g transform="translate(6 14) scale(.94)">${face(c,mood)}</g></g></svg>`;}
+const miniFace=(c,mood)=>`<svg viewBox="40 26 120 120" aria-hidden="true"><g>${face(c,mood)}</g></svg>`;
 
-// Show fallback overlay if BeTech image fails
-document.querySelector('#betechOverlay').closest('.mockup-content').querySelector('img').addEventListener('error', function() {
-  document.getElementById('betechOverlay').style.display = 'flex';
+/* =====================================================================
+   2. DÉCORS ET ACCESSOIRES DES STORYBOARDS (repère 520 × 250)
+   ===================================================================== */
+const SK=`stroke="${K}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"`;
+const ROOM={
+  bedroom:()=>`<rect width="520" height="250" fill="#E9EEF2"/><rect x="0" y="212" width="520" height="38" fill="#D5DCE2"/><rect x="360" y="24" width="124" height="96" rx="6" fill="#26394A" ${SK}/><circle cx="452" cy="52" r="15" fill="#F2EBC9"/><circle cx="458" cy="47" r="12" fill="#26394A"/><circle cx="388" cy="46" r="2.5" fill="#fff"/><circle cx="410" cy="82" r="2" fill="#fff"/><circle cx="430" cy="98" r="2" fill="#fff"/><path d="M422 24V120M360 72H484" stroke="${K}" stroke-width="3"/>`,
+  bath:()=>`<rect width="520" height="250" fill="url(#tiles)"/><rect x="0" y="214" width="520" height="36" fill="#B9C9CB"/><rect width="520" height="250" fill="#15211E" opacity=".22"/><path d="M440 0V30" stroke="${K}" stroke-width="3"/><circle cx="440" cy="40" r="11" fill="#F6E7A8" ${SK}/>`,
+  living:()=>`<rect width="520" height="250" fill="#F2ECE2"/><rect x="0" y="214" width="520" height="36" fill="#E1D6C5"/><rect x="40" y="30" width="90" height="64" rx="4" fill="#fff" ${SK}/><path d="M50 84 L72 58 L88 74 L100 62 L120 84Z" fill="#7FBFB3" stroke="${K}" stroke-width="2"/><rect x="0" y="150" width="520" height="70" rx="22" fill="#C9B79C" ${SK}/><rect width="520" height="250" fill="#2A1E10" opacity=".12"/>`,
+  class:()=>`<rect width="520" height="250" fill="#EDF0E6"/><rect x="0" y="214" width="520" height="36" fill="#D9DCCD"/><rect x="290" y="22" width="210" height="110" rx="6" fill="#FFFFFF" ${SK}/><path d="M308 48 Q340 40 372 50 T440 46M308 72 Q350 66 390 74M308 96 L410 96M430 70 l20 20m0 -20 l-20 20" fill="none" stroke="#2B7A6C" stroke-width="3" stroke-linecap="round"/><circle cx="60" cy="50" r="22" fill="#fff" ${SK}/><path d="M60 50V36M60 50L70 56" ${SK}/>`,
+  office:()=>`<rect width="520" height="250" fill="#ECF1F3"/><rect x="330" y="20" width="160" height="100" rx="6" fill="#CFE6EE" ${SK}/><path d="M410 20V120M330 70H490" stroke="${K}" stroke-width="3"/><rect x="0" y="186" width="520" height="64" fill="#D8C6A6" ${SK}/>`,
+  close:()=>`<rect width="520" height="250" fill="#E1F0EC"/><circle cx="420" cy="40" r="90" fill="#CBE5DE"/><circle cx="70" cy="230" r="70" fill="#CBE5DE"/>`,
+  night:()=>`<rect width="520" height="250" fill="#26394A"/><circle cx="460" cy="44" r="18" fill="#F2EBC9"/><circle cx="468" cy="38" r="15" fill="#26394A"/><circle cx="60" cy="40" r="2.5" fill="#fff"/><circle cx="120" cy="80" r="2" fill="#fff"/><circle cx="380" cy="110" r="2" fill="#fff"/>`
+};
+const T=(x,y,t,o={})=>`<text x="${x}" y="${y}" font-family="${o.f||"IBM Plex Sans,Arial,sans-serif"}" font-size="${o.s||11}" font-weight="${o.w||600}" fill="${o.c||"#EAF2EF"}" text-anchor="${o.a||"start"}">${t}</text>`;
+/* Écrans du téléphone : repère local 120 × 230, écran x8 y14 w104 h204 */
+const SCR={
+  cam:(lab,big)=>`<rect x="14" y="40" width="92" height="132" rx="6" fill="#2E2E33"/><rect x="24" y="72" width="72" height="56" rx="4" fill="none" stroke="#7FBFB3" stroke-width="2.5" stroke-dasharray="6 4"/>${T(60,big?108:104,big||lab,{a:"middle",s:big?20:9,f:big?"IBM Plex Mono,monospace":undefined,c:big?"#FF7A6B":"#EAF2EF",w:700})}${big?T(60,160,lab,{a:"middle",s:8.5,c:"#A9BDB7"}):""}<circle cx="60" cy="196" r="13" fill="#EAF2EF" stroke="#7FBFB3" stroke-width="3"/>`,
+  q:(prog,lines,opts,on)=>T(18,38,prog,{s:8.5,c:"#7FBFB3",f:"IBM Plex Mono,monospace"})+lines.map((l,i)=>T(18,58+i*13,l,{s:11,w:700})).join("")+opts.map((o,i)=>`<rect x="18" y="${100+i*30}" width="84" height="23" rx="8" fill="${i===on?"#7FBFB3":"#24332F"}"/>`+T(60,116+i*30,o,{a:"middle",s:10,w:700,c:i===on?"#14201D":"#EAF2EF"})).join(""),
+  list:(title,items)=>T(18,38,title,{s:11,w:700})+items.map(([a,b,h],i)=>`<rect x="16" y="${50+i*48}" width="88" height="40" rx="8" fill="#24332F" stroke="${h?"#7FBFB3":"none"}" stroke-width="2"/>`+T(22,66+i*48,a,{s:8.6,w:700})+T(22,80+i*48,b,{s:8,c:h?"#7FBFB3":"#A9BDB7"})).join(""),
+  alert:(lines,btn)=>`<path d="M60 40 L82 78 L38 78Z" fill="#E2A33C" stroke="${K}" stroke-width="2"/>${T(60,73,"!",{a:"middle",s:20,w:800,c:K})}`+lines.map((l,i)=>T(60,100+i*14,l,{a:"middle",s:10,w:700})).join("")+`<rect x="16" y="170" width="88" height="26" rx="9" fill="#7FBFB3" opacity=".45"/>`+T(60,187,btn,{a:"middle",s:9.5,w:700,c:"#14201D"}),
+  step:(prog,lines,btn)=>T(18,38,prog,{s:8.5,c:"#7FBFB3",f:"IBM Plex Mono,monospace"})+`<rect x="16" y="46" width="88" height="62" rx="8" fill="url(#hatch)" stroke="#3A4D48" stroke-width="2"/><rect x="16" y="46" width="88" height="62" rx="8" fill="#7FBFB3" opacity=".15"/>`+lines.map((l,i)=>T(18,126+i*13,l,{s:9.5})).join("")+`<rect x="14" y="174" width="92" height="30" rx="10" fill="#7FBFB3"/>`+T(60,194,btn,{a:"middle",s:11,w:700,c:"#14201D"}),
+  ok:(t,lines)=>`<circle cx="60" cy="76" r="26" fill="#7FBFB3"/><path d="M47 76 L57 86 L74 66" fill="none" stroke="#14201D" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`+T(60,124,t,{a:"middle",s:12,w:700})+lines.map((l,i)=>T(60,142+i*13,l,{a:"middle",s:9,c:"#A9BDB7"})).join(""),
+  text:(t,lines,btn,btn2)=>T(18,40,t,{s:11,w:700})+lines.map((l,i)=>T(18,60+i*14,l,{s:9.5,c:"#D5E3DF"})).join("")+(btn?`<rect x="14" y="${btn2?146:172}" width="92" height="26" rx="9" fill="#7FBFB3"/>`+T(60,(btn2?146:172)+17,btn,{a:"middle",s:10,w:700,c:"#14201D"}):"")+(btn2?`<rect x="14" y="178" width="92" height="26" rx="9" fill="#24332F"/>`+T(60,195,btn2,{a:"middle",s:10,w:700}):""),
+  post:(t,lines,th)=>T(18,40,t,{s:11,w:700})+lines.map((l,i)=>T(18,58+i*13,l,{s:9,c:"#D5E3DF"})).join("")+th.map((v,i)=>`<rect x="${18+i*30}" y="104" width="24" height="24" rx="5" fill="${v?"#3A5A53":"#24332F"}" stroke="${v?"#7FBFB3":"#596B66"}" stroke-width="2"/>`+(v?`<path d="M${23+i*30} 116 l4 4 l8 -9" fill="none" stroke="#7FBFB3" stroke-width="2.5"/>`:`<path d="M${24+i*30} 110 l12 12m0 -12 l-12 12" stroke="#596B66" stroke-width="2"/>`)).join("")+T(18,146,"Photos visibles : "+th.filter(Boolean).length+"/"+th.length,{s:8.5,c:"#A9BDB7"})+`<rect x="14" y="172" width="92" height="28" rx="9" fill="#7FBFB3"/>`+T(60,190,"Publier",{a:"middle",s:11,w:700,c:"#14201D"}),
+  batt:()=>`<rect x="36" y="70" width="44" height="80" rx="7" fill="none" stroke="#FF7A6B" stroke-width="4"/><rect x="50" y="62" width="16" height="8" rx="2" fill="#FF7A6B"/><rect x="42" y="138" width="32" height="7" rx="2" fill="#FF7A6B"/>`+T(60,176,"1 %",{a:"middle",s:16,w:800,c:"#FF7A6B"})+T(60,194,"Batterie faible",{a:"middle",s:9,c:"#A9BDB7"})
+};
+const phone=(x,y,s,inner,rot)=>`<g transform="translate(${x} ${y}) rotate(${rot||0}) scale(${s})"><rect width="120" height="230" rx="20" fill="#0E1513" ${SK}/><rect x="8" y="14" width="104" height="204" rx="12" fill="#1F2E2B"/><rect x="44" y="6" width="32" height="5" rx="2.5" fill="#33443F"/>${inner}</g>`;
+const hand=(x,y,s,skin)=>`<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 40 C-6 20 6 4 20 6 L44 10 C52 12 52 22 44 24 L30 24 C40 26 40 36 30 36 L18 38 C10 40 6 52 0 40Z" fill="${skin}" ${SK}/></g>`;
+const P={
+  bubble:(x,y,w,h,lines,tail)=>`<g><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="18" fill="#fff" ${SK}/><path d="M${x+(tail||30)} ${y+h-1} l-10 22 l26 -22" fill="#fff" ${SK}/><path d="M${x+(tail||30)+2} ${y+h-2} h20" stroke="#fff" stroke-width="5"/>${lines.map((l,i)=>`<text x="${x+w/2}" y="${y+30+i*26}" text-anchor="middle" font-family="Caveat,cursive" font-size="25" font-weight="700" fill="${K}">${l}</text>`).join("")}</g>`,
+  think:(x,y,w,h,lines)=>`<g><ellipse cx="${x+w/2}" cy="${y+h/2}" rx="${w/2}" ry="${h/2}" fill="#fff" ${SK}/><circle cx="${x+18}" cy="${y+h+12}" r="8" fill="#fff" ${SK}/><circle cx="${x+6}" cy="${y+h+28}" r="5" fill="#fff" ${SK}/>${lines.map((l,i)=>`<text x="${x+w/2}" y="${y+h/2+8+(i-(lines.length-1)/2)*26}" text-anchor="middle" font-family="Caveat,cursive" font-size="26" font-weight="700" fill="${K}">${l}</text>`).join("")}</g>`,
+  notif:(x,y,w,a,b)=>`<g><rect x="${x}" y="${y}" width="${w}" height="64" rx="16" fill="#1F2E2B" ${SK}/><circle cx="${x+26}" cy="${y+32}" r="13" fill="#7FBFB3"/><path d="M${x+20} ${y+33} l5 5 l8 -10" fill="none" stroke="#14201D" stroke-width="3"/>${T(x+48,y+27,a,{s:13,c:"#7FBFB3",w:700})}${T(x+48,y+47,b,{s:14,w:600})}</g>`,
+  clock:(x,y,t)=>`<g><rect x="${x}" y="${y}" width="96" height="44" rx="8" fill="#1C2A27" ${SK}/>${T(x+48,y+31,t,{a:"middle",s:24,w:700,c:"#FF7A6B",f:"IBM Plex Mono,monospace"})}</g>`,
+  books:(x,y)=>`<g><rect x="${x}" y="${y}" width="110" height="18" rx="3" fill="#E2A33C" ${SK}/><rect x="${x+8}" y="${y-18}" width="96" height="18" rx="3" fill="#7FBFB3" ${SK}/><rect x="${x+2}" y="${y-36}" width="104" height="18" rx="3" fill="#C2483B" ${SK}/>${T(x+54,y-22,"EXAMENS",{a:"middle",s:11,w:800,c:"#fff"})}</g>`,
+  washer:(x,y,s,code,puddle)=>`<g transform="translate(${x} ${y}) scale(${s})">${puddle?`<ellipse cx="80" cy="186" rx="110" ry="14" fill="#9FD3E8" opacity=".8"/>`:""}<rect width="160" height="180" rx="12" fill="#fff" ${SK}/><path d="M0 40 H160" stroke="${K}" stroke-width="3"/><rect x="14" y="10" width="54" height="22" rx="4" fill="#1C2A27"/>${T(41,27,code||"",{a:"middle",s:15,w:700,c:"#FF7A6B",f:"IBM Plex Mono,monospace"})}<circle cx="132" cy="21" r="10" fill="#EBEFEC" ${SK}/><circle cx="80" cy="108" r="52" fill="#EBEFEC" ${SK}/><circle cx="80" cy="108" r="38" fill="#BFE0EA" ${SK}/><path d="M56 110 q12 -10 24 0 t24 0" fill="none" stroke="#fff" stroke-width="3"/><rect x="118" y="160" width="30" height="14" rx="3" fill="#EBEFEC" stroke="${K}" stroke-width="2"/></g>`,
+  bucket:(x,y,s)=>`<g transform="translate(${x} ${y}) scale(${s||1})"><path d="M0 0 H70 L62 62 H8Z" fill="#7FBFB3" ${SK}/><path d="M4 0 Q35 -34 66 0" fill="none" ${SK}/><path d="M6 18 H64" stroke="${K}" stroke-width="2" opacity=".4"/></g>`,
+  laptop:(x,y,s,inner)=>`<g transform="translate(${x} ${y}) scale(${s})"><rect x="0" y="0" width="200" height="124" rx="10" fill="#0E1513" ${SK}/><rect x="10" y="10" width="180" height="104" rx="5" fill="#1F2E2B"/>${inner}<path d="M-20 124 H220 L208 142 H-8Z" fill="#C9D3CF" ${SK}/></g>`,
+  spark:(x,y,c)=>`<g fill="${c||"#E2A33C"}" stroke="${K}" stroke-width="2"><path d="M${x} ${y-16} L${x+5} ${y-5} L${x+16} ${y} L${x+5} ${y+5} L${x} ${y+16} L${x-5} ${y+5} L${x-16} ${y} L${x-5} ${y-5}Z"/></g>`,
+  q:(x,y)=>`<text x="${x}" y="${y}" font-family="Bitter,serif" font-size="46" font-weight="800" fill="#C2483B" stroke="${K}" stroke-width="1.5">?</text>`,
+  bolt:(x,y)=>`<path d="M${x} ${y} l-18 34 h14 l-8 30 l26 -40 h-14 l8 -24Z" fill="#E2A33C" ${SK}/>`,
+  plug:(x,y)=>`<g><path d="M${x} ${y} h30 v26 a15 15 0 0 1 -30 0Z" fill="#EBEFEC" ${SK}/><path d="M${x+8} ${y} v-14 M${x+22} ${y} v-14" ${SK}/><path d="M${x+15} ${y+40} q0 30 -30 40" fill="none" ${SK}/><path d="M${x+40} ${y-10} l20 -20 M${x+48} ${y+6} l26 -4" stroke="#C2483B" stroke-width="4" stroke-linecap="round"/></g>`,
+  pick:(x,y)=>`<path d="M${x} ${y} l64 -30" stroke="#C9A06A" stroke-width="5" stroke-linecap="round"/>`,
+  badge:(x,y,t,u)=>`<g><path d="M${x-14} ${y+20} l-10 46 l18 -10 l12 16 l6 -46" fill="#C2483B" ${SK}/><path d="M${x+14} ${y+20} l10 46 l-18 -10 l-12 16 l-6 -46" fill="#C2483B" ${SK}/><circle cx="${x}" cy="${y}" r="34" fill="#E2A33C" ${SK}/>${T(x,y+8,t,{a:"middle",s:24,w:800,c:K,f:"Bitter,serif"})}${u?T(x,y+64+20,u,{a:"middle",s:15,w:700,c:K}):""}</g>`,
+  db:(x,y)=>`<g><ellipse cx="${x}" cy="${y}" rx="56" ry="16" fill="#7FBFB3" ${SK}/><path d="M${x-56} ${y} v80 a56 16 0 0 0 112 0 v-80" fill="#7FBFB3" ${SK}/><path d="M${x-56} ${y+28} a56 16 0 0 0 112 0M${x-56} ${y+54} a56 16 0 0 0 112 0" fill="none" ${SK}/>${T(x,y+120,"Base de connaissances",{a:"middle",s:15,w:700,c:K})}</g>`,
+  arrow:(x1,y1,x2,y2)=>`<g><path d="M${x1} ${y1} Q${(x1+x2)/2} ${Math.min(y1,y2)-40} ${x2} ${y2}" fill="none" stroke="${K}" stroke-width="3.5" stroke-dasharray="9 7"/><path d="M${x2} ${y2} l-14 -4 l6 12z" fill="${K}"/></g>`,
+  lamp:(x,y)=>`<g><path d="M${x} ${y} l-30 140" stroke="${K}" stroke-width="3"/><path d="M${x-40} ${y+150} h50" stroke="${K}" stroke-width="4"/><path d="M${x-20} ${y-10} l40 0 l-12 -30 l-16 0Z" fill="#E2A33C" ${SK}/></g>`,
+  beam:(x,y)=>`<path d="M${x} ${y} L${x+150} ${y+40} L${x+150} ${y+110}Z" fill="#F6E7A8" opacity=".55"/>`,
+  zz:(x,y,t)=>`<text x="${x}" y="${y}" font-family="Caveat,cursive" font-size="30" font-weight="700" fill="${K}">${t}</text>`
+};
+const scene=(room,...parts)=>`<svg viewBox="0 0 520 250" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${ROOM[room]()}${parts.join("")}</svg>`;
+function panel(n,tag,c,mood,cap,svg){const g=CH[c].f?1:0;return `<div class="pnl"><div class="scn">${svg}<span class="ptag">${tag}</span><span class="emo">${miniFace(c,mood)}${CH[c].n} ${MW[mood][g]}</span><span class="pn">${n}</span></div><p class="cap">${cap}</p></div>`;}
+
+/* =====================================================================
+   3. MODÈLE DES TÂCHES
+   ===================================================================== */
+const N=(id,name,o,k)=>Object.assign({id,name,k:k||[]},o||{});
+const TREE=N("0","Utiliser FixIt",{op:"inter",act:"US",role:"all",obj:["Compte","Appareil","Diagnostic","Forum"],pre:"Application installée et ouverte",post:"Le besoin est traité : panne réglée, aide apportée ou contenu modéré",freq:"Très fréquente",cx:"Élevée",crit:"Moyenne · un guide touche à des appareils électriques",dur:"Selon la tâche",pers:["Salma","Youssef","Amine","Hédi"]},[
+ N("1","Gérer mon compte",{rep:1,op:"or",role:"all",obj:["Compte","Profil"],pre:"Application ouverte",post:"Compte à jour, utilisateur identifié",freq:"Occasionnelle",cx:"Faible",crit:"Faible · aucune action sur un appareil",dur:"1 min",F:"F1 à F4"},[
+  N("1.1","Se connecter",{op:"seq",obj:["Compte","Identifiants"],pre:"Un compte existe, pas encore connecté",post:"Session ouverte, accueil affiché",freq:"Occasionnelle",dur:"30 s",F:"F1"},[
+   N("1.1.1","Ouvrir « Se connecter »",{phys:["Toucher « Se connecter »"]}),
+   N("1.1.2","Saisir email et mot de passe, ou Google",{phys:["Toucher le champ, taper l'email","Taper le mot de passe","Ou toucher « Continuer avec Google »"]}),
+   N("1.1.3","Valider la connexion",{phys:["Toucher « Se connecter »"]}),
+   N("1.1.4","Vérifier les identifiants",{act:"S",dur:"< 2 s",msg:"« Email ou mot de passe incorrect. » + lien « Mot de passe oublié »"})]),
+  N("1.2","Créer un compte",{op:"seq",obj:["Compte"],pre:"Pas de compte ; souvent demandé au moment de publier",post:"Compte créé, diagnostic conservé",freq:"Rare (une fois)",dur:"1 min",F:"F1, F2"},[
+   N("1.2.1","Renseigner prénom, email, mot de passe",{phys:["Remplir trois champs, dans n'importe quel ordre"]}),
+   N("1.2.2","Accepter les conditions",{phys:["Cocher la case"]}),
+   N("1.2.3","Valider l'inscription",{phys:["Toucher « Créer mon compte »"]}),
+   N("1.2.4","Créer le compte",{act:"S",dur:"< 2 s",msg:"« Bienvenue ! Votre diagnostic est gardé. »"})]),
+  N("1.3","Consulter mon historique",{op:"seq",obj:["Profil","Diagnostic"],pre:"Connecté",post:"Diagnostic affiché avec son statut",F:"F3"},[
+   N("1.3.1","Ouvrir mon profil",{phys:["Toucher l'onglet « Profil »"]}),
+   N("1.3.2","Ouvrir l'historique",{phys:["Toucher « Voir tout l'historique »"]}),
+   N("1.3.3","Consulter un diagnostic",{rep:1,phys:["Toucher une ligne"]})]),
+  N("1.4","Choisir mes domaines",{op:"seq",role:"con",obj:["Profil","Catégorie"],pre:"Connecté comme contributeur",post:"Fil et notifications filtrés",freq:"Rare",F:"F4",pers:["Amine","Hédi"]},[
+   N("1.4.1","Ouvrir « Domaines d'expertise »",{phys:["Toucher l'entrée du profil"]}),
+   N("1.4.2","Cocher une catégorie",{rep:1,phys:["Toucher la case"]}),
+   N("1.4.3","Enregistrer",{phys:["Toucher « Enregistrer »"]})]),
+  N("1.5","Régler l'affichage",{op:"and",opt:1,obj:["Préférences"],post:"Préférences appliquées partout",freq:"Rare"},[
+   N("1.5.1","Choisir la langue",{phys:["Toucher FR ou AR"],post:"Interface traduite, droite à gauche en arabe"}),
+   N("1.5.2","Activer le mode sombre",{phys:["Toucher l'interrupteur"]}),
+   N("1.5.3","Régler la taille du texte",{phys:["Glisser le curseur"]})])]),
+ N("2","Résoudre une panne",{rep:1,op:"seq",role:"dem",obj:["Appareil","Diagnostic","Solution","Guide"],pre:"Un appareil est en panne ; compte non requis",post:"Panne résolue, ou demande transmise à la communauté",freq:"Fréquente",cx:"Moyenne",crit:"Élevée · eau, électricité, batteries",dur:"3 min jusqu'à la 1re solution",F:"F5 à F17",pers:["Salma","Youssef"]},[
+  N("2.1","Signaler le problème",{op:"seq",obj:["Appareil","Étiquette","Code d'erreur","Description"],pre:"Application ouverte",post:"Diagnostic créé : appareil identifié, panne décrite",cx:"Moyenne",crit:"Faible · aucune intervention physique",dur:"1 min",F:"F5 à F9"},[
+   N("2.1.1","Identifier l'appareil",{op:"or",obj:["Appareil"],post:"Marque et modèle connus",dur:"30 s"},[
+    N("2.1.1.1","Photographier l'étiquette",{op:"seq",obj:["Étiquette","Photo"],pre:"Étiquette lisible",post:"Marque et modèle proposés",dur:"20 s",F:"F5, F7"},[
+     N("2.1.1.1.1","Cadrer l'étiquette",{phys:["Orienter le téléphone","Aligner l'étiquette dans le cadre de visée"]}),
+     N("2.1.1.1.2","Prendre la photo",{phys:["Toucher le déclencheur"]}),
+     N("2.1.1.1.3","Lire le texte (OCR)",{act:"S",dur:"< 3 s",post:"Marque, modèle et code proposés",msg:"Échec : « On n'arrive pas à lire l'étiquette. » → saisie manuelle"}),
+     N("2.1.1.1.4","Reprendre la photo",{opt:1,pre:"Photo floue détectée",phys:["Toucher « Reprendre »"],msg:"« Cette photo est un peu floue. »"})]),
+    N("2.1.1.2","Saisir l'appareil à la main",{op:"seq",pre:"Étiquette absente ou illisible",post:"Appareil choisi dans le catalogue",dur:"30 s",F:"F8"},[
+     N("2.1.1.2.1","Choisir la catégorie",{phys:["Toucher une catégorie (icône + nom)"]}),
+     N("2.1.1.2.2","Choisir la marque",{phys:["Toucher ou taper la marque"]}),
+     N("2.1.1.2.3","Choisir le modèle",{phys:["Toucher le modèle"],msg:"Inconnu : « Ce modèle n'est pas encore connu. » → solutions de la catégorie"})])]),
+   N("2.1.2","Joindre le code d'erreur",{op:"seq",opt:1,obj:["Code d'erreur"],pre:"L'appareil affiche un code",post:"Code enregistré, prioritaire dans le classement",dur:"20 s",F:"F6"},[
+    N("2.1.2.1","Photographier l'afficheur",{phys:["Cadrer l'afficheur","Toucher le déclencheur"]}),
+    N("2.1.2.2","Lire le code",{act:"S",dur:"< 2 s"})]),
+   N("2.1.3","Confirmer l'appareil",{op:"seq",post:"Appareil et code confirmés",dur:"15 s",F:"F7"},[
+    N("2.1.3.1","Lire la proposition",{phys:["Lire marque, modèle, code"]}),
+    N("2.1.3.2","Corriger une information",{opt:1,phys:["Toucher le champ, choisir la bonne valeur"]}),
+    N("2.1.3.3","Toucher « C'est bien mon appareil »",{phys:["Toucher le bouton principal"],msg:"« Est-ce bien votre appareil ? »"})]),
+   N("2.1.4","Décrire la panne",{op:"or",obj:["Description"],post:"Symptôme décrit",dur:"30 s",F:"F9"},[
+    N("2.1.4.1","Écrire la description",{phys:["Taper au clavier"]}),
+    N("2.1.4.2","Dicter la description",{phys:["Maintenir le micro, parler, relâcher"]})]),
+   N("2.1.5","Valider le signalement",{phys:["Toucher « Valider »"],post:"Diagnostic créé, questionnaire lancé"})]),
+  N("2.2","Répondre au questionnaire",{op:"par",obj:["Question","Réponse"],pre:"Signalement validé",post:"Causes probables réduites",cx:"Faible",crit:"Faible",dur:"1 min (4 à 6 questions)",F:"F10, F11"},[
+   N("2.2.1","Traiter une question",{rep:1,op:"seq",post:"Réponse enregistrée"},[
+    N("2.2.1.1","Lire la question",{phys:["Lire le texte et l'image d'aide"]}),
+    N("2.2.1.2","Choisir Oui, Non ou Je ne sais pas",{phys:["Toucher un des trois grands boutons"]}),
+    N("2.2.1.3","Revenir en arrière",{opt:1,phys:["Toucher « Précédent »"]})]),
+   N("2.2.2","Afficher la progression",{act:"S",post:"« Question 3 sur 5 » visible en permanence"})]),
+  N("2.3","Essayer une solution",{rep:1,op:"seq",obj:["Solution","Guide","Étape"],pre:"Questionnaire terminé",post:"Solution essayée, résultat déclaré",cx:"Moyenne",crit:"Élevée · intervention sur l'appareil",dur:"5 à 30 min",F:"F12 à F17"},[
+   N("2.3.1","Choisir une solution",{op:"seq",obj:["Solution","Fiche"],post:"Solution choisie",crit:"Faible",dur:"1 min",F:"F13, F14"},[
+    N("2.3.1.1","Classer les solutions",{act:"S",dur:"< 2 s",post:"Liste triée par score : modèle, code, réponses, mots-clés"}),
+    N("2.3.1.2","Parcourir la liste",{phys:["Faire défiler, lire difficulté et durée"]}),
+    N("2.3.1.3","Consulter une fiche",{rep:1,phys:["Toucher une solution, lire outils et pièces"]}),
+    N("2.3.1.4","Lancer le guide",{phys:["Toucher « Commencer le guide »"]})]),
+   N("2.3.2","Suivre le guide",{op:"seq",obj:["Guide","Étape"],post:"Étapes réalisées ou guide sauvegardé",crit:"Élevée · eau, électricité, batterie",dur:"5 à 30 min",F:"F12, F15, F16"},[
+    N("2.3.2.1","Prendre connaissance de la sécurité",{op:"wait",wait:"3 s",obj:["Alerte sécurité"],post:"Risque compris et confirmé",F:"F12"},[
+     N("2.3.2.1.1","Afficher l'alerte sécurité",{act:"S",msg:"« Débranchez la machine avant de commencer. » ; danger réel : « Arrêtons-nous ici, votre sécurité d'abord. »"}),
+     N("2.3.2.1.2","Toucher « J'ai compris »",{phys:["Toucher le bouton, actif après 3 s"]})]),
+    N("2.3.2.2","Exécuter le guide",{op:"mono",post:"Étapes faites ou guide interrompu"},[
+     N("2.3.2.2.1","Réaliser une étape",{rep:1,op:"seq",dur:"1 à 5 min par étape"},[
+      N("2.3.2.2.1.1","Lire l'étape et l'image",{phys:["Lire un texte court, regarder l'image"]}),
+      N("2.3.2.2.1.2","Faire le geste sur l'appareil",{phys:["Action réelle hors écran : dévisser, nettoyer…"]}),
+      N("2.3.2.2.1.3","Toucher « Suivant »",{phys:["Grand bouton en bas, au pouce"]})]),
+     N("2.3.2.2.2","Interrompre le guide",{opt:1,op:"seq",F:"F16"},[
+      N("2.3.2.2.2.1","Quitter le guide",{phys:["Toucher « Quitter » ou fermer l'app"]}),
+      N("2.3.2.2.2.2","Sauvegarder l'étape",{act:"S",dur:"Immédiat",msg:"« Pas d'inquiétude, votre guide est gardé. »"}),
+      N("2.3.2.2.2.3","Reprendre plus tard",{phys:["Toucher « Reprendre à l'étape 3 »"]})])])]),
+   N("2.3.3","Déclarer le résultat",{op:"or",obj:["Diagnostic"],crit:"Faible",dur:"10 s",F:"F17"},[
+    N("2.3.3.1","Répondre « Oui, ça a marché »",{op:"seq"},[
+     N("2.3.3.1.1","Toucher « Oui »",{phys:["Toucher « Oui »"]}),
+     N("2.3.3.1.2","Clore le diagnostic",{act:"S",post:"Statut « résolu », fiabilité de la solution augmentée"})]),
+    N("2.3.3.2","Répondre « Non »",{op:"seq"},[
+     N("2.3.3.2.1","Toucher « Non »",{phys:["Toucher « Non »"]}),
+     N("2.3.3.2.2","Choisir : solution suivante ou forum",{phys:["Toucher « Solution suivante » ou « Demander à la communauté »"],msg:"« La communauté peut vous aider. »"})])])])]),
+ N("3","Demander de l'aide",{rep:1,op:"seq",role:"dem",obj:["Post","Photo","Réponse"],pre:"Aucune solution n'a marché, ou modèle inconnu",post:"Une réponse choisie ; le cas peut enrichir la base",freq:"Occasionnelle",cx:"Moyenne",crit:"Moyenne · conseils donnés par des tiers",dur:"Publication < 1 min",F:"F18 à F20, F28, F29",pers:["Youssef","Salma"]},[
+  N("3.1","Se connecter",{opt:1,ref:"1.1",pre:"Pas encore connecté",msg:"« Créez un compte pour publier. » Le diagnostic est conservé.",phys:["Voir 1.1, ou 1.2 pour créer un compte"]}),
+  N("3.2","Préparer le post",{op:"and",obj:["Post","Photo"],post:"Post prêt à publier",dur:"40 s",F:"F18"},[
+   N("3.2.1","Relire le post pré-rempli",{phys:["Lire modèle, code, description, solutions essayées"]}),
+   N("3.2.2","Choisir les photos à publier",{phys:["Toucher chaque vignette pour l'inclure ou l'exclure"],post:"Seules les photos choisies sont publiques"}),
+   N("3.2.3","Compléter la description",{opt:1,phys:["Taper un détail"]})]),
+  N("3.3","Publier le post",{phys:["Toucher « Publier »"],post:"Post visible, contributeurs du domaine notifiés"}),
+  N("3.4","Suivre la demande",{op:"seq",F:"F19, F28"},[
+   N("3.4.1","Recevoir une notification",{act:"S"}),
+   N("3.4.2","Lire une réponse",{rep:1,phys:["Toucher la notification, lire"]})]),
+  N("3.5","Confirmer le résultat",{op:"wait",wait:"48 h",F:"F29"},[
+   N("3.5.1","Essayer la solution proposée",{ref:"2.3.2",phys:["Suivre la réponse comme un guide (voir 2.3.2)"]}),
+   N("3.5.2","Recevoir un rappel",{act:"S",opt:1,pre:"Aucune confirmation après 48 h",msg:"« La solution a-t-elle fonctionné ? »"})]),
+  N("3.6","Marquer la meilleure réponse",{op:"seq",F:"F20"},[
+   N("3.6.1","Toucher « Meilleure réponse »",{phys:["Toucher l'étoile"]}),
+   N("3.6.2","Passer le post en résolu",{act:"S",post:"Solution proposée à l'administratrice"})])]),
+ N("4","Aider la communauté",{rep:1,op:"inter",role:"con",obj:["Fil","Post","Réponse","Réputation"],pre:"Connecté, domaines choisis",post:"Questions résolues, contenus évalués",freq:"Fréquente",cx:"Moyenne",crit:"Moyenne · un mauvais conseil peut être dangereux",dur:"Sessions de 5 à 10 min",F:"F19, F21 à F27",pers:["Amine","Hédi"]},[
+  N("4.1","Traiter une question",{rep:1,op:"seq",dur:"5 min"},[
+   N("4.1.1","Trouver une question",{op:"or"},[
+    N("4.1.1.1","Ouvrir la notification",{phys:["Toucher la notification"],F:"F25"}),
+    N("4.1.1.2","Parcourir le fil filtré",{phys:["Choisir catégorie et marque, ouvrir une discussion"],F:"F21, F24"})]),
+   N("4.1.2","Répondre",{op:"seq",F:"F19"},[
+    N("4.1.2.1","Lire le diagnostic complet",{phys:["Lire modèle, code, photos, solutions essayées"]}),
+    N("4.1.2.2","Rédiger la réponse",{phys:["Taper ou dicter"]}),
+    N("4.1.2.3","Joindre une photo",{opt:1,phys:["Toucher l'icône photo"]}),
+    N("4.1.2.4","Publier la réponse",{phys:["Toucher « Répondre »"]})])]),
+  N("4.2","Évaluer les contenus",{rep:1,op:"or",dur:"10 s",F:"F22, F23"},[
+   N("4.2.1","Voter « utile »",{phys:["Toucher le pouce"]}),
+   N("4.2.2","Signaler un contenu",{op:"seq",crit:"Élevée · contenu potentiellement dangereux"},[
+    N("4.2.2.1","Choisir le motif",{phys:["Toucher « Conseil dangereux », « Hors sujet »…"]}),
+    N("4.2.2.2","Envoyer le signalement",{phys:["Toucher « Envoyer »"],msg:"« Merci, un modérateur va vérifier. »"})])]),
+  N("4.3","Consulter ma réputation",{op:"seq",freq:"Occasionnelle",crit:"Faible",F:"F26"},[
+   N("4.3.1","Ouvrir mon profil",{phys:["Toucher « Profil »"]}),
+   N("4.3.2","Lire points et badges",{phys:["Lire le compteur et les badges"]})])]),
+ N("5","Administrer",{rep:1,op:"inter",role:"adm",obj:["Solution","Signalement","Catalogue"],pre:"Connectée comme administratrice",post:"Base fiable, contenus modérés",freq:"Très fréquente",cx:"Moyenne",crit:"Élevée · une solution validée atteint tous les utilisateurs",dur:"Traitement sous 24 h",F:"F30 à F32",pers:["Rania"]},[
+  N("5.1","Valider une solution",{rep:1,op:"seq",obj:["Solution","Discussion"],post:"Solution ajoutée à la base ou refusée",F:"F30"},[
+   N("5.1.1","Ouvrir la file des solutions",{phys:["Toucher « À valider »"]}),
+   N("5.1.2","Lire la solution et la discussion",{phys:["Lire réponse, votes, diagnostic"]}),
+   N("5.1.3","Décider",{op:"or"},[
+    N("5.1.3.1","Valider et ajouter à la base",{phys:["Toucher « Valider »"],post:"Solution proposée aux prochains utilisateurs"}),
+    N("5.1.3.2","Refuser avec un motif",{phys:["Choisir un motif, envoyer"]})])]),
+  N("5.2","Traiter un signalement",{rep:1,op:"seq",obj:["Signalement"],F:"F31"},[
+   N("5.2.1","Ouvrir la liste des signalements",{phys:["Toucher « Signalements »"]}),
+   N("5.2.2","Examiner le contenu",{phys:["Lire le contenu et le motif"]}),
+   N("5.2.3","Conserver ou supprimer",{phys:["Toucher « Conserver » ou « Supprimer »"]}),
+   N("5.2.4","Notifier l'auteur",{act:"S",msg:"« Votre réponse a été retirée : conseil dangereux. »"})]),
+  N("5.3","Gérer le catalogue",{rep:1,op:"or",freq:"Rare",crit:"Moyenne · un questionnaire faux fausse les diagnostics",F:"F32"},[
+   N("5.3.1","Ajouter une catégorie ou un appareil",{phys:["Remplir le formulaire"]}),
+   N("5.3.2","Modifier un questionnaire",{phys:["Éditer une question"]})])])
+]);
+const BY={};(function ix(n,p,d){n.p=p;n.d=d;BY[n.id]=n;n.k.forEach(c=>ix(c,n,d+1));})(TREE,null,0);
+const OPS={seq:{s:";",l:"Séquence",u:" ; "},or:{s:"ou",l:"Disjonction",u:" | "},and:{s:"&",l:"Indépendance d'ordre",u:" & "},inter:{s:"↔",l:"Entrelacement bidirectionnel",u:" ↔ "},mono:{s:"→",l:"Entrelacement monodirectionnel",u:" → "},par:{s:"||",l:"Parallélisme",u:" || "},wait:{s:"(t>n)",l:"Attente",u:" (t>n) "}};
+const sym=n=>n.op==="wait"?`(t>${n.wait})`:OPS[n.op].s;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const act=n=>n.act||(n.k.length?"US":"U");
+function inh(n,k){let x=n;while(x){if(x[k]!==undefined)return{v:x[k],from:x===n?null:x};x=x.p;}return{v:undefined};}
+const roleOf=n=>inh(n,"role").v||"all";
+const tok=n=>(n.opt?"[":"")+n.name+(n.opt?"]":"")+(n.rep?"*":"");
+const uan=n=>n.name+" := "+n.k.map(tok).join(n.op==="wait"?` (t>${n.wait}) `:OPS[n.op].u);
+const lvl=s=>s?String(s).split(" ")[0]:"";
+const LVC={Faible:"f",Moyenne:"m","Élevée":"h"},LVL={Faible:"F",Moyenne:"M","Élevée":"É"};
+const fdots=f=>{f=(f||"").toLowerCase();return f.startsWith("très")?"●●●":f.startsWith("fréq")?"●●○":f.startsWith("occ")?"●○○":f.startsWith("rare")?"○○○":"";};
+function wrap(s,max){const w=s.split(" ");const L=[];let l="";w.forEach(x=>{if((l+" "+x).trim().length>max&&l){L.push(l);l=x;}else l=(l+" "+x).trim();});if(l)L.push(l);if(L.length>2){L[1]=L.slice(1).join(" ");if(L[1].length>max)L[1]=L[1].slice(0,max-1)+"…";L.length=2;}return L;}
+
+/* Rendu d'un arbre : nœuds composés côte à côte, feuilles empilées sous leur parent */
+const CW=206,IND=24,HC=86,HL=58,HCUT=68,VG=50,SG=16;
+function drawTree(root,cfg){
+  const cut=new Set(cfg.cut||[]),maxD=cfg.maxD??99;
+  const asLeaf=n=>!n.k.length||cut.has(n.id)||n.d-root.d>=maxD;
+  const lh=n=>n.k.length?HCUT:HL;
+  const gap=n=>Math.max(30,sym(n).length*9+22);
+  function meas(n){
+    if(asLeaf(n)){n._m="leaf";n._w=CW;n._h=lh(n);return;}
+    if(n.k.every(asLeaf)){n._m="stack";n._w=CW;n._h=HC+SG+n.k.reduce((a,k)=>a+lh(k)+SG,0);return;}
+    n._m="h";n.k.forEach(meas);n._t=n.k.reduce((a,k)=>a+k._w,0)+gap(n)*(n.k.length-1);n._w=Math.max(CW,n._t);n._h=HC+VG+Math.max(...n.k.map(k=>k._h));
+  }
+  function place(n,x,y){
+    if(n._m==="leaf"){n._x=x;n._y=y;n._bw=CW;n._bh=lh(n);return;}
+    if(n._m==="stack"){n._x=x;n._y=y;n._bw=CW;n._bh=HC;let cy=y+HC+SG;n.k.forEach(k=>{k._m="leaf";k._x=x+IND;k._y=cy;k._bw=CW-IND;k._bh=lh(k);cy+=k._bh+SG;});return;}
+    let cx=x+(n._w-n._t)/2;const g=gap(n);n.k.forEach(k=>{place(k,cx,y+HC+VG);cx+=k._w+g;});
+    const f=n.k[0],l=n.k[n.k.length-1];n._x=(f._x+f._bw/2+l._x+l._bw/2)/2-CW/2;n._y=y;n._bw=CW;n._bh=HC;
+  }
+  meas(root);place(root,0,0);
+  const path=cfg.path||[],num={};path.forEach((id,i)=>{if(!(id in num))num[id]=i+1;});
+  let E="",O="",V="",minx=1e9,maxx=-1e9,maxy=0;
+  const pill=(x,y,s,lab)=>{const w=s.length*9+16;return `<g class="op"><rect x="${x-w/2}" y="${y-12}" width="${w}" height="24" rx="12"/><text x="${x}" y="${y+5}" text-anchor="middle">${esc(s)}</text><title>${lab}</title></g>`;};
+  (function draw(n,inStack){
+    minx=Math.min(minx,n._x);maxx=Math.max(maxx,n._x+n._bw);maxy=Math.max(maxy,n._y+n._bh);
+    if(n._m==="h"){const px=n._x+CW/2,by=n._y+HC+VG/2,f=n.k[0],l=n.k[n.k.length-1];
+      E+=`<path class="ed" d="M${px} ${n._y+HC}V${by}M${f._x+f._bw/2} ${by}H${l._x+l._bw/2}${n.k.map(k=>`M${k._x+k._bw/2} ${by}V${k._y}`).join("")}"/>`;
+      for(let i=0;i<n.k.length-1;i++){const a=n.k[i],b=n.k[i+1];O+=pill((a._x+a._bw+b._x)/2,a._y+32,sym(n),OPS[n.op].l);}
+      n.k.forEach(k=>draw(k));}
+    if(n._m==="stack"){const sx=n._x+IND/2,last=n.k[n.k.length-1];
+      E+=`<path class="ed" d="M${sx} ${n._y+HC}V${last._y+last._bh/2}${n.k.map(k=>`M${sx} ${k._y+k._bh/2}H${k._x}`).join("")}"/>`;
+      for(let i=0;i<n.k.length-1;i++){const a=n.k[i],b=n.k[i+1];O+=pill(sx,(a._y+a._bh+b._y)/2,sym(n),OPS[n.op].l);}
+      n.k.forEach(k=>draw(k,1));}
+    const isCut=n.k.length&&asLeaf(n),comp=n.k.length&&!isCut;
+    const cls=["tn",comp?"comp":"",isCut?"cut":"","r-"+roleOf(n),act(n)==="S"?"sys":"",n.opt?"opt":"",num[n.id]?"hl":"",cfg.sel===n.id?"sel":""].join(" ");
+    const bd=act(n)==="US"?"U+S":act(n),bw=bd.length*8+12,w=n._bw,h=n._bh,L=wrap(n.name,w>190?20:18);
+    let g=`<g class="${cls}" data-n="${n.id}" transform="translate(${n._x} ${n._y})"><rect class="bx" width="${w}" height="${h}" rx="14"/><rect class="st" x="6" y="10" width="5" height="${h-20}" rx="2.5"/>`;
+    g+=`<text class="id" x="${n.rep?36:20}" y="22">${n.id}</text>`;if(n.rep)g+=`<text class="star" x="18" y="30">*</text>`;
+    g+=`<g class="bd"><rect x="${w-bw-8}" y="8" width="${bw}" height="18" rx="9"/><text x="${w-8-bw/2}" y="21" text-anchor="middle">${bd}</text></g>`;
+    L.forEach((t,i)=>g+=`<text class="nm" x="20" y="${42+i*18}">${esc(t)}</text>`);
+    if(comp){const fr=fdots(inh(n,"freq").v),cr=lvl(inh(n,"crit").v),du=(n.dur||"").replace(/ \(.+\)/,"");
+      g+=`<text class="dc" x="20" y="${h-12}">${fr?"fr "+fr:""}${cr?` <tspan class="${LVC[cr]}">crit ${LVL[cr]}</tspan>`:""}${du?" ⏱ "+esc(du.length>12?du.slice(0,11)+"…":du):""}</text>`;}
+    if(isCut)g+=`<text class="lk" x="20" y="${h-11}">▸ ${n.k.length} sous-tâches${cfg.link&&cfg.link[n.id]?" · voir "+cfg.link[n.id].replace("-","."):""}</text>`;
+    if(num[n.id])g+=`<g class="pb2"><circle cx="0" cy="0" r="15"/><text x="0" y="5" text-anchor="middle">${num[n.id]}</text></g>`;
+    V+=g+`<title>${esc(n.id+" "+n.name)}</title></g>`;
+  })(root);
+  const pad=30;return `<svg viewBox="${minx-pad} ${-pad} ${maxx-minx+2*pad} ${maxy+2*pad}" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Arbre de la tâche ${esc(root.name)}">${E}${O}${V}</svg>`;
+}
+function decoHTML(id){
+  const n=BY[id],f=inh(n,"freq"),c=inh(n,"crit"),o=inh(n,"obj"),pe=inh(n,"pers"),r=roleOf(n);
+  const row=(k,v,from)=>`<div class="kk">${k}</div><div>${v}${from?` <span class="ih">hérité de ${esc(from.id)}</span>`:""}</div>`;
+  const cl=lvl(c.v),cc={Faible:"lvF",Moyenne:"lvM","Élevée":"lvH"}[cl];
+  let h=`<button class="x" type="button" data-close aria-label="Fermer">×</button><div class="mono mutd" style="font-size:15px">${n.id} · ${n.k.length?"tâche composée":"tâche élémentaire"}</div><h3>${n.opt?"[":""}${esc(n.name)}${n.opt?"]":""}${n.rep?' <span style="color:var(--red)">*</span>':""}</h3>`;
+  if(n.k.length)h+=`<div class="uan">${esc(uan(n))}</div><div class="mutd" style="font-size:16px;margin-bottom:8px">Procédure : ${OPS[n.op].l.toLowerCase()} (${esc(sym(n))})</div>`;
+  h+=`<div class="dg">`+row("Objets référencés",o.v?o.v.join(", "):"—",o.from)+row("Préconditions",esc(n.pre||(n.p?"Tâche précédente terminée":"—")))+row("Postconditions",esc(n.post||`« ${n.name} » réalisée`))+row("Fréquence",f.v?esc(f.v):"—",f.from)+row("Optionnelle",n.opt?"Oui, notée [ ]":"Non")+row("Répétition",n.rep?"Oui, notée *":"Non")+row("Complexité",esc(n.cx||(n.k.length>3?"Moyenne":"Faible")))+row("Criticité",c.v?`<span class="${cc}">${cl}</span>${esc(String(c.v).slice(cl.length))}`:"—",c.from)+row("Durée maximale",esc(n.dur||(act(n)==="S"?"< 2 s":"Quelques secondes")))+row("Acteur",{U:"Utilisateur",S:"Système",US:"Utilisateur et système"}[act(n)])+row("Rôle",{dem:"Demandeur",con:"Contributeur",adm:"Administratrice",all:"Tous"}[r])+row("Personas",pe.v?pe.v.join(", "):"—",pe.from)+(n.F?row("Fonctionnalités",n.F):"")+(n.msg?row("Message",esc(n.msg)):"");
+  if(!n.k.length)h+=row("Actions physiques",(n.phys||(act(n)==="S"?["Aucune : le système agit et affiche le résultat"]:["Toucher l'élément à l'écran"])).map(esc).join("<br>"));
+  h+=`</div>`;if(n.ref)h+=`<p style="margin-top:12px"><button class="go" type="button" data-node="${n.ref}">Voir la tâche ${n.ref}</button></p>`;
+  if(NODESLIDE(n.id)&&cfgSlideOf!==NODESLIDE(n.id))h+=`<p style="margin-top:12px"><button class="go" type="button" data-go="${NODESLIDE(n.id)}">Voir le détail (${NODESLIDE(n.id).replace("-",".")})</button></p>`;
+  return h;
+}
+let cfgSlideOf=null;
+const DETAIL={"1":"3-4","2.1":"3-5","2.2":"3-6","2.3":"3-6","3":"3-7","4":"3-8","5":"3-9"};
+const NODESLIDE=id=>{let x=BY[id];while(x){if(DETAIL[x.id])return DETAIL[x.id];x=x.p;}return null;};
+
+/* =====================================================================
+   4. CONTENU DES DIAPOS
+   ===================================================================== */
+const PERS={
+ salma:{seg:"C1 · Cible principale",age:"21 ans",lieu:"Ariana",metier:"Étudiante",form:"Licence en gestion",niv:"Débutante",traits:["Pressée","Prudente","Débrouillarde"],
+  ctx:"Vit chez ses parents avec un petit budget. Son téléphone, indispensable pour réviser, ne charge plus à une semaine de ses examens. Elle n'a jamais ouvert un appareil.",
+  cit:"Je veux juste savoir si c'est grave avant de dépenser de l'argent que je n'ai pas.",
+  buts:["Identifier la cause en quelques minutes","Réparer elle-même si c'est simple","Savoir quand il faut un réparateur","Garder une trace de ce qu'elle a essayé"],
+  frus:["Les vidéos concernent d'autres modèles","Peur d'aggraver la panne","Pas de budget pour un diagnostic payant","Peu de temps en période d'examens"],
+  use:[["Smartphone au quotidien",95],["Tutoriels vidéo",70],["Forums d'entraide",20]],dom:1,info:4,
+  mot:[["Économiser",90],["Rapidité",80],["Autonomie",50]],
+  impl:["Solutions faciles en tête de liste","Termes de réparation expliqués","Difficulté et durée annoncées","Message clair quand il faut un professionnel"],sc:["2-1"]},
+ youssef:{seg:"C2 · Cible principale",age:"26 ans",lieu:"Tunis",metier:"Commercial",form:"Licence en commerce",niv:"Intermédiaire",traits:["Autonome","Impatient","Bricoleur du dimanche"],
+  ctx:"Premier emploi, vit seul en location. Sa machine à laver affiche E21 et ne vidange plus ; la notice est perdue et le propriétaire ne répond pas. Il répare le soir, téléphone en main.",
+  cit:"Je n'ai pas envie d'attendre trois jours un technicien pour un filtre bouché.",
+  buts:["Comprendre le code d'erreur","Régler le problème le soir même","Suivre un guide d'une seule main","Reprendre là où il s'est arrêté"],
+  frus:["Code d'erreur incompréhensible","Salle de bain sombre, mains mouillées","Crainte de l'eau et de l'électricité","Souvent interrompu"],
+  use:[["Smartphone au quotidien",85],["Tutoriels vidéo",60],["Forums d'entraide",35]],dom:2,info:4,
+  mot:[["Autonomie",85],["Rapidité",75],["Économiser",60]],
+  impl:["Grands boutons en bas, au pouce","Mode sombre et contraste élevé","Alerte « débranchez » avant le guide","Sauvegarde automatique de l'étape"],sc:["2-2","2-3"]},
+ amine:{seg:"C3 · Cible secondaire",age:"23 ans",lieu:"Tunis",metier:"Étudiant ingénieur",form:"Génie électrique",niv:"Avancé",traits:["Serviable","Curieux","Méthodique"],
+  ctx:"Répare les téléphones et PC de son entourage depuis le lycée. Il aide volontiers, et veut valoriser ses compétences, notamment sur son CV. Il consulte le forum entre deux cours.",
+  cit:"Donnez-moi le modèle et ce que vous avez déjà essayé, et je vous trouve la panne.",
+  buts:["Voir d'abord les questions de son domaine","Répondre du premier coup","Être reconnu pour son aide"],
+  frus:["Questions vagues, sans modèle ni photo","Redemander les informations de base","Les demandeurs ne confirment jamais"],
+  use:[["Smartphone au quotidien",90],["Forums d'entraide",80],["Tutoriels vidéo",50]],dom:4,info:5,
+  mot:[["Aider",80],["Reconnaissance",70],["Apprendre",60]],
+  impl:["Fil filtré par domaine","Diagnostic complet joint à la question","Points et badges visibles","Rappel au demandeur pour confirmer"],sc:["2-4"]},
+ hedi:{seg:"C4 · Cible secondaire",age:"44 ans",lieu:"Ben Arous",metier:"Technicien de maintenance",form:"BTS électrotechnique",niv:"Expert",traits:["Prudent","Bref","Expérimenté"],
+  ctx:"Répare depuis des années les appareils de ses voisins. Il lit le forum le soir, avec ses lunettes de lecture, et n'aime pas écrire de longs messages sur un téléphone.",
+  cit:"Beaucoup de pannes se règlent en dix minutes, encore faut-il savoir où regarder.",
+  buts:["Répondre vite, avec peu de texte","Signaler les conseils dangereux","Transmettre son savoir-faire"],
+  frus:["Petits caractères sur mobile","Conseils dangereux d'amateurs","Les mêmes questions reviennent"],
+  use:[["Smartphone au quotidien",60],["Forums d'entraide",55],["Tutoriels vidéo",20]],dom:5,info:2,
+  mot:[["Transmettre",85],["Sécurité",75],["Reconnaissance",40]],
+  impl:["Texte agrandissable","Signalement en deux gestes","Réponses courtes acceptées, photo possible","Modération rapide des contenus dangereux"],sc:["2-5"]}
+};
+const bars=(arr,a)=>arr.map(([l,v])=>`<div class="bar${a?" a":""}"><span>${l}</span><span class="tk"><i style="width:${v}%"></i></span><b>${v} %</b></div>`).join("");
+const scale5=v=>"●".repeat(v)+"○".repeat(5-v);
+function personaSlide(c){const p=PERS[c],C=CH[c];return `
+<div class="pers">
+  <div class="pid">
+    <div class="k" style="color:var(--mint);margin:0">Persona · ${p.seg}</div>
+    <div class="ph">${portrait(c,"neutral")}<div><h3>${C.n}</h3><div class="seg">${p.niv} · ${p.age}</div></div></div>
+    <dl><dt>Lieu</dt><dd>${p.lieu}</dd><dt>Métier</dt><dd>${p.metier}</dd><dt>Formation</dt><dd>${p.form}</dd></dl>
+    <div class="tr">${p.traits.map(t=>`<span>${t}</span>`).join("")}</div>
+    <p class="ctx">${p.ctx}</p>
+    <div style="margin-top:auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><span style="color:var(--mist);font-size:18px;font-weight:700">Scénarios types</span>${p.sc.map(s=>`<button class="go" type="button" data-go="${s}">${s.replace("2-","S")}</button>`).join("")}</div>
+  </div>
+  <div class="pr">
+    <p class="pq">« ${p.cit} »</p>
+    <div class="pb"><h4>Buts et comportements</h4><ul>${p.buts.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+    <div class="pb fr"><h4>Frustrations</h4><ul>${p.frus.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+    <div class="pb"><h4>Usages et compétences</h4>${bars(p.use)}<div class="dots"><span style="letter-spacing:0;color:var(--ink);font-size:19px">Réparation</span><span>${scale5(p.dom)}</span></div><div class="dots"><span style="letter-spacing:0;color:var(--ink);font-size:19px">Informatique</span><span>${scale5(p.info)}</span></div></div>
+    <div class="pb"><h4>Motivations</h4>${bars(p.mot,1)}</div>
+    <div class="pb full impl"><h4>Ce que cela implique pour FixIt</h4><ul>${p.impl.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+  </div>
+</div>`;}
+
+/* Storyboards : 3 actes (déclencheur → interaction → résolution) */
+const SB={
+ "2-1":{c:"salma",id:"S1",title:"Le téléphone ne charge plus",sub:"Problème connu, résolu par l'application",tasks:["3-5","3-6"],panels:[
+  panel(1,"Déclencheur","salma","stressed","23 h, veille d'examen : le téléphone ne charge plus.",scene("bedroom",P.books(30,210),P.clock(40,30,"23:04"),bust("salma","stressed",150,64,.95),phone(360,14,.94,SCR.batt(),6))),
+  panel(2,"Reconnaître, pas mémoriser","salma","focus","Elle photographie l'étiquette de la boîte : inutile de connaître le modèle.",scene("close",bust("salma","focus",20,70,.9),phone(300,10,1,SCR.cam("Samsung Galaxy A14")),hand(286,170,.9,CH.salma.skin))),
+  panel(3,"Une question par écran","salma","neutral","Quatre questions, réponses par grands boutons.",scene("close",phone(70,10,1,SCR.q("Question 2 sur 4",["Le voyant de","charge s'allume-t-il ?"],["Oui","Non","Je ne sais pas"],1)),bust("salma","neutral",290,64,.95,1),P.think(250,10,170,58,["Non…"]))),
+  panel(4,"Durée et difficulté annoncées","salma","happy","Trois pistes classées ; la première est facile et prend 10 min.",scene("close",phone(300,10,1,SCR.list("Solutions",[["Nettoyer le port","Facile · 10 min",1],["Tester un autre câble","Facile · 2 min"],["Calibrer la batterie","Moyen · 30 min"]])),bust("salma","happy",30,64,.95))),
+  panel(5,"Guide pas à pas","salma","focus","Le téléphone posé, elle suit une étape par écran.",scene("office",bust("salma","focus",30,70,.9),phone(330,14,.92,SCR.step("Étape 2 sur 4",["Retirez la poussière","avec un cure-dent"],"Suivant")),P.pick(190,190))),
+  panel(6,"Retour immédiat","salma","relief","« Ça a marché ? » Oui : diagnostic résolu, gardé dans l'historique.",scene("bedroom",bust("salma","relief",130,64,.95),phone(360,14,.94,SCR.ok("Problème résolu",["Ajouté à","votre historique"]),-4),P.bolt(330,40),P.spark(80,60),P.spark(110,130,"#7FBFB3")))]},
+ "2-2":{c:"youssef",id:"S2",title:"Code d'erreur, guide interrompu puis repris",sub:"Contexte contraignant : nuit, eau, une main libre",tasks:["3-5","3-6"],panels:[
+  panel(1,"Déclencheur","youssef","worried","21 h : la machine affiche E21 et ne vidange plus. Notice perdue.",scene("bath",P.washer(300,30,1.05,"E21",1),bust("youssef","worried",40,64,.95),P.q(240,80))),
+  panel(2,"Information située","youssef","focus","Il photographie l'afficheur : FixIt lit le code lui-même.",scene("bath",P.washer(30,40,1,"E21"),phone(300,10,1,SCR.cam("Lave-linge Samsung","E21")),hand(286,170,.9,CH.youssef.skin))),
+  panel(3,"Sécurité d'abord","youssef","surprised","Avant le guide : débrancher. « J'ai compris » s'active après 3 s.",scene("close",phone(300,10,1,SCR.alert(["Débranchez","la machine","et fermez l'eau"],"J'ai compris (3 s)")),P.plug(150,120),bust("youssef","surprised",20,70,.85))),
+  panel(4,"Une main, mode sombre","youssef","focus","Accroupi, il suit les étapes d'une main, dans la pénombre.",scene("bath",P.washer(270,40,1.05,"E21"),bust("youssef","focus",30,70,.9),phone(200,60,.72,SCR.step("Étape 3 sur 6",["Dévissez le filtre","en bas à droite"],"Suivant"),-8))),
+  panel(5,"Interruption","youssef","worried","Pas de bassine : il quitte le guide, l'étape est sauvegardée.",scene("bath",bust("youssef","worried",30,64,.95),phone(330,14,.94,SCR.text("Guide en pause",["Pas d'inquiétude,","votre guide est","gardé à l'étape 3."],"Quitter")),P.think(200,12,120,60,["Bassine ?"]))),
+  panel(6,"Reprise","youssef","happy","De retour, le guide reprend exactement à l'étape 3.",scene("bath",bust("youssef","happy",30,64,.95),P.bucket(210,170,1),phone(330,14,.94,SCR.text("Bon retour",["Vous étiez à","l'étape 3 sur 6."],"Reprendre","Recommencer"))))]},
+ "2-3":{c:"youssef",id:"S3",title:"Problème nouveau, publié sur le forum",sub:"Quand la base ne suffit pas, la communauté prend le relais",tasks:["3-6","3-7","3-4"],panels:[
+  panel(1,"Échec","youssef","angry","Les deux solutions ont échoué. Il répond « Non ».",scene("bath",P.washer(30,40,1,"E21",1),phone(330,14,.94,SCR.q("Résultat",["Ça a marché ?"],["Oui","Non"],1)),bust("youssef","angry",170,70,.85))),
+  panel(2,"Aucune saisie perdue","youssef","neutral","Il crée un compte en 1 min ; son diagnostic est gardé.",scene("living",bust("youssef","neutral",40,64,.95),phone(330,14,.94,SCR.text("Créez un compte",["pour publier.","Votre diagnostic","est gardé."],"Créer mon compte")))),
+  panel(3,"Contrôle de la confidentialité","youssef","focus","Le post est pré-rempli ; il choisit les photos visibles.",scene("close",phone(60,10,1,SCR.post("Votre question",["Lave-linge · E21","Essayé : filtre,","tuyau"],[1,1,0])),bust("youssef","focus",290,64,.95,1),P.bubble(250,14,200,48,["Pas l'étiquette !"],150))),
+  panel(4,"Notification","youssef","surprised","Le lendemain, au travail : Amine a répondu.",scene("office",bust("youssef","surprised",40,64,.95),P.notif(240,40,260,"FixIt · maintenant","Amine a répondu"))),
+  panel(5,"Réutiliser le guide","youssef","focus","Le soir, il applique la réponse comme un guide.",scene("bath",P.washer(300,40,1,"E21"),bust("youssef","focus",30,70,.9),phone(200,60,.72,SCR.step("Réponse d'Amine",["Vérifiez la pompe","de vidange"],"Suivant"),-8))),
+  panel(6,"Boucle d'entraide","youssef","proud","Il marque la meilleure réponse : la solution pourra enrichir la base.",scene("close",bust("youssef","proud",30,64,.95),P.badge(330,90,"★","Meilleure réponse"),P.spark(440,50),P.spark(240,60,"#7FBFB3")))]},
+ "2-4":{c:"amine",id:"S4",title:"Répondre à une question de son domaine",sub:"Contributeur, puis validation par l'administratrice",tasks:["3-8","3-9"],panels:[
+  panel(1,"Fil filtré par domaine","amine","neutral","Pause entre deux cours : une question dans son domaine.",scene("class",bust("amine","neutral",40,64,.95),P.notif(230,150,270,"Lave-linge","Nouvelle question : E21"))),
+  panel(2,"Informations complètes","amine","focus","Modèle, code, photos, solutions essayées : tout y est.",scene("close",phone(300,10,1,SCR.post("Lave-linge · E21",["Modèle : WW80T","Essayé : filtre,","tuyau"],[1,1])),bust("amine","focus",30,64,.95))),
+  panel(3,"Répondre en deux minutes","amine","happy","Il répond sans rien redemander, photo à l'appui.",scene("class",bust("amine","happy",40,64,.95),P.bubble(230,24,260,74,["Vérifie la pompe","de vidange !"],60))),
+  panel(4,"Reconnaissance","amine","proud","Sa réponse est choisie : 15 points et un badge.",scene("close",bust("amine","proud",30,64,.95),P.badge(340,90,"+15","Expert lave-linge"),P.spark(450,40),P.spark(250,50,"#7FBFB3"))),
+  panel(5,"Validation","rania","focus","Rania, l'administratrice, relit la discussion et valide.",scene("office",bust("rania","focus",20,64,.95),P.laptop(270,40,1,T(22,36,"À valider",{s:15,w:700})+T(22,58,"Pompe de vidange",{s:12,c:"#A9BDB7"})+T(22,76,"12 votes utiles",{s:12,c:"#A9BDB7"})+`<rect x="22" y="86" width="70" height="20" rx="6" fill="#7FBFB3"/>`+T(57,100,"Valider",{a:"middle",s:11,w:700,c:"#14201D"})+`<rect x="100" y="86" width="70" height="20" rx="6" fill="#24332F"/>`+T(135,100,"Refuser",{a:"middle",s:11,w:700})))),
+  panel(6,"La base s'enrichit","salma","happy","Le prochain utilisateur avec E21 reçoit la solution directement.",scene("close",P.db(110,70),P.arrow(190,100,300,100),bust("salma","happy",300,64,.95)))]},
+ "2-5":{c:"hedi",id:"S5",title:"Signaler un conseil dangereux",sub:"Contributeur expert et modération",tasks:["3-8","3-9"],panels:[
+  panel(1,"Texte agrandi","hedi","neutral","22 h : Hédi lit le fil Électroménager, texte agrandi.",scene("living",bust("hedi","neutral",40,64,.95),phone(330,14,.94,SCR.list("Électroménager",[["Four : ne chauffe plus","3 réponses",1],["Frigo : bruit fort","1 réponse"],["Lave-linge : E21","Résolu"]])))),
+  panel(2,"Contenu dangereux","hedi","angry","Une réponse conseille d'ouvrir un four encore branché.",scene("close",phone(300,10,1,SCR.text("Réponse",["« Ouvrez l'arrière","du four, pas besoin","de débrancher. »"])),bust("hedi","angry",30,64,.95),P.q(230,90))),
+  panel(3,"Deux gestes","hedi","focus","Il choisit le motif, puis « Envoyer » : deux gestes.",scene("close",phone(60,10,1,SCR.q("Signaler",["Pourquoi ce","contenu ?"],["Conseil dangereux","Hors sujet","Autre"],0)),bust("hedi","focus",290,64,.95,1))),
+  panel(4,"Retour d'information","hedi","relief","Un message confirme que le signalement est reçu.",scene("living",bust("hedi","relief",40,64,.95),phone(330,14,.94,SCR.ok("Merci",["Un modérateur","va vérifier."])))),
+  panel(5,"Modération","rania","angry","Rania examine le contenu et le supprime.",scene("office",bust("rania","angry",20,64,.95),P.laptop(270,40,1,T(22,36,"Signalement",{s:15,w:700})+T(22,58,"Conseil dangereux",{s:12,c:"#FF7A6B"})+T(22,76,"Signalé par Hédi",{s:12,c:"#A9BDB7"})+`<rect x="22" y="86" width="70" height="20" rx="6" fill="#24332F"/>`+T(57,100,"Conserver",{a:"middle",s:11,w:700})+`<rect x="100" y="86" width="70" height="20" rx="6" fill="#C2483B"/>`+T(135,100,"Supprimer",{a:"middle",s:11,w:700})))),
+  panel(6,"Message bref et pertinent","hedi","proud","L'auteur est prévenu, avec le motif. Le fil reste sûr.",scene("night",P.notif(130,90,300,"FixIt · modération","Réponse retirée : conseil dangereux")))]}
+};
+function storySlide(id){const s=SB[id];return `
+<div class="sbh"><div class="av">${portrait(s.c,"neutral")}</div><div><div class="k">Scénario ${s.id} · ${CH[s.c].n} · ${s.sub}</div><h2>${s.title}</h2></div>
+<div class="acts"><div class="three"><b>Déclencheur</b><i>→</i><b>Interaction avec FixIt</b><i>→</i><b>Résolution</b></div><div style="display:flex;gap:8px;align-items:center"><span class="mutd" style="font-size:18px;font-weight:600">Tâches de l'arbre</span>${s.tasks.map(t=>`<button class="go" type="button" data-go="${t}">${t.replace("-",".")} ${SLIDETITLE[t]||""}</button>`).join("")}</div></div></div>
+<div class="board">${s.panels.join("")}</div>`;}
+
+/* Arbres par diapo */
+const TREES={
+ "3-3":{root:"0",maxD:2,title:"L'arbre complet, en un coup d'œil",lead:"La racine est l'objectif global ; chaque branche est une tâche de haut niveau, détaillée dans les diapos suivantes.",link:DETAIL,sel:"0"},
+ "3-4":{root:"1",title:"Gérer mon compte",lead:"Cinq procédures au choix (ou). Le réglage de l'affichage est optionnel et ses trois réglages se font dans n'importe quel ordre (&).",paths:{S3:["1.2.1","1.2.2","1.2.3","1.2.4"]},sel:"1.2"},
+ "3-5":{root:"2.1",title:"Signaler le problème",lead:"Identifier l'appareil par photo ou à la main, joindre le code si l'appareil en affiche un, confirmer, puis décrire la panne.",paths:{S1:["2.1.1.1.1","2.1.1.1.2","2.1.1.1.3","2.1.3.1","2.1.3.3","2.1.4.1","2.1.5"],S2:["2.1.1.1.2","2.1.1.1.3","2.1.2.1","2.1.2.2","2.1.3.3","2.1.4.2","2.1.5"]},sel:"2.1.1.1.3"},
+ "3-6":{root:"2",cut:["2.1"],title:"Diagnostiquer et réparer",lead:"Le questionnaire avance pendant que la progression s'affiche (||). Le guide impose une attente de 3 s sur l'alerte (t>n) et peut être interrompu à tout moment (→).",link:DETAIL,paths:{S1:["2.2.1.1","2.2.1.2","2.2.2","2.3.1.1","2.3.1.2","2.3.1.3","2.3.1.4","2.3.2.1.1","2.3.2.1.2","2.3.2.2.1.1","2.3.2.2.1.2","2.3.2.2.1.3","2.3.3.1.1","2.3.3.1.2"],S2:["2.3.1.4","2.3.2.1.1","2.3.2.1.2","2.3.2.2.1.2","2.3.2.2.2.1","2.3.2.2.2.2","2.3.2.2.2.3","2.3.2.2.1.3"]},sel:"2.3.2.1"},
+ "3-7":{root:"3",title:"Demander de l'aide",lead:"Le post est préparé dans n'importe quel ordre (&). Sans confirmation 48 h après la réponse, un rappel part (t>48 h).",paths:{S3:["3.1","3.2.1","3.2.2","3.3","3.4.1","3.4.2","3.5.1","3.6.1","3.6.2"]},sel:"3.5"},
+ "3-8":{root:"4",title:"Aider la communauté",lead:"Le contributeur passe librement d'une activité à l'autre (↔) : répondre, évaluer, suivre sa réputation.",paths:{S4:["4.1.1.1","4.1.2.1","4.1.2.2","4.1.2.3","4.1.2.4","4.3.2"],S5:["4.1.1.2","4.2.2.1","4.2.2.2"]},sel:"4.2.2"},
+ "3-9":{root:"5",title:"Administrer",lead:"L'administratrice alterne validation, modération et catalogue (↔). C'est la tâche la plus critique : une solution validée atteint tout le monde.",paths:{S4:["5.1.1","5.1.2","5.1.3.1"],S5:["5.2.1","5.2.2","5.2.3","5.2.4"]},sel:"5.1"}
+};
+function treeSlide(id){const c=TREES[id];const sc=Object.keys(c.paths||{});
+  const ops=[...new Set((function all(n,a){if(n.k.length&&!(c.cut||[]).includes(n.id)&&(c.maxD===undefined||n.d-BY[c.root].d<c.maxD))a.push(n.op);n.k.forEach(k=>all(k,a));return a;})(BY[c.root],[]))];
+  return `<div><div class="k">Modèle des tâches · ${id.replace("-",".")}</div><h2>${c.title}</h2><p class="lead">${c.lead}</p></div>
+  <div class="tbar"><span class="tl">Touchez un nœud pour ses décorations.</span>${sc.length?`<span class="tl" style="margin-left:10px">Suivre :</span>`+sc.map(s=>`<button class="sc" type="button" data-path="${s}" aria-pressed="false">${s} · ${SB[Object.keys(SB).find(k=>SB[k].id===s)].c==="salma"?"Salma":CH[SB[Object.keys(SB).find(k=>SB[k].id===s)].c].n}</button>`).join(""):""}<span class="sp"></span>${ops.map(o=>`<span class="tl"><b>${o==="wait"?"(t>n)":OPS[o].s}</b>${OPS[o].l.toLowerCase()}</span>`).join("")}<span class="tl"><b style="color:var(--red)">*</b>répétition</span><span class="tl"><b>[ ]</b>optionnelle</span></div>
+  <div class="tarea" data-tree="${id}"></div>`;}
+
+const SLIDETITLE={"3-4":"Compte","3-5":"Signaler","3-6":"Réparer","3-7":"Demander de l'aide","3-8":"Aider","3-9":"Administrer"};
+
+/* Diapo 1.1 : cible */
+function targetSVG(){const f=(c,x,y,s)=>{const id="tc"+(CPN++);return `<g transform="translate(${x} ${y}) scale(${s})"><clipPath id="${id}"><circle cx="100" cy="100" r="96"/></clipPath><circle cx="100" cy="100" r="96" fill="#fff"/><g clip-path="url(#${id})"><g transform="translate(6 14) scale(.94)">${face(c,"happy")}</g></g><circle cx="100" cy="100" r="96" fill="none" stroke="${K}" stroke-width="5"/></g>`;};
+ return `<svg viewBox="0 0 820 820" style="width:100%;height:100%" aria-hidden="true">
+ <circle cx="410" cy="410" r="400" fill="#DCE7E2" stroke="${K}" stroke-width="2" stroke-dasharray="10 8"/>
+ <circle cx="410" cy="410" r="300" fill="#C3E1D9" stroke="${K}" stroke-width="2"/>
+ <circle cx="410" cy="410" r="180" fill="#7FBFB3" stroke="${K}" stroke-width="3"/>
+ <text x="410" y="300" text-anchor="middle" font-family="Bitter,serif" font-weight="800" font-size="30" fill="${K}">Cible principale</text>
+ <text x="410" y="340" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-weight="600" font-size="22" fill="${K}">Ceux qui ont une panne</text>
+ ${f("salma",300,350,.5)}${f("youssef",420,350,.5)}
+ <text x="352" y="482" text-anchor="middle" font-family="IBM Plex Sans" font-weight="700" font-size="20" fill="${K}">C1 Salma</text><text x="472" y="482" text-anchor="middle" font-family="IBM Plex Sans" font-weight="700" font-size="20" fill="${K}">C2 Youssef</text>
+ <text x="410" y="150" text-anchor="middle" font-family="Bitter,serif" font-weight="800" font-size="27" fill="${K}">Cible secondaire : ceux qui aident</text>
+ ${f("amine",128,330,.42)}${f("hedi",608,330,.42)}
+ <text x="170" y="450" text-anchor="middle" font-family="IBM Plex Sans" font-weight="700" font-size="19" fill="${K}">C3 Amine</text><text x="650" y="450" text-anchor="middle" font-family="IBM Plex Sans" font-weight="700" font-size="19" fill="${K}">C4 Hédi</text>
+ <text x="410" y="56" text-anchor="middle" font-family="Bitter,serif" font-weight="800" font-size="24" fill="${K}">Interne</text>
+ ${f("rania",370,620,.4)}<text x="410" y="735" text-anchor="middle" font-family="IBM Plex Sans" font-weight="700" font-size="19" fill="${K}">C5 Rania, administratrice</text>
+ </svg>`;}
+
+const ICON={
+ hand:`<svg viewBox="0 0 64 64"><rect x="20" y="6" width="26" height="46" rx="5" fill="#1F2E2B" ${SK}/><path d="M8 40 C6 30 14 26 20 30 L20 52 C14 56 8 50 8 40Z" fill="#EDB993" ${SK}/><path d="M46 30 L56 26" ${SK}/><path d="M48 40 L58 40" ${SK}/></svg>`,
+ dark:`<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="#26394A" ${SK}/><circle cx="38" cy="26" r="12" fill="#F2EBC9"/><circle cx="43" cy="22" r="10" fill="#26394A"/></svg>`,
+ cam:`<svg viewBox="0 0 64 64"><rect x="6" y="18" width="52" height="36" rx="7" fill="#7FBFB3" ${SK}/><rect x="22" y="10" width="20" height="10" rx="3" fill="#7FBFB3" ${SK}/><circle cx="32" cy="36" r="11" fill="#fff" ${SK}/></svg>`,
+ wifi:`<svg viewBox="0 0 64 64"><path d="M8 26 Q32 4 56 26M16 34 Q32 20 48 34M24 42 Q32 36 40 42" fill="none" ${SK}/><circle cx="32" cy="50" r="4" fill="${K}"/><path d="M10 54 L54 10" stroke="#C2483B" stroke-width="5" stroke-linecap="round"/></svg>`,
+ warn:`<svg viewBox="0 0 64 64"><path d="M32 6 L60 56 H4Z" fill="#E2A33C" ${SK}/><path d="M32 24 V40" stroke="${K}" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="48" r="3.5" fill="${K}"/></svg>`
+};
+const ctxCard=(ic,t,o,d)=>`<div class="card" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;gap:18px;align-items:center"><div style="width:76px;height:76px;flex-shrink:0">${ic}</div><h3>${t}</h3></div><p class="mutd" style="font-size:21px">${o}</p><p style="font-size:21px;font-weight:600;color:var(--mintd)">→ ${d}</p></div>`;
+
+const SECTIONS=[
+ {n:"01",title:"Les utilisateurs",desc:"Qui ils sont, dans quel contexte ils réparent, et ce que cela change pour l'interface.",slides:[
+  {id:"1-1",t:"Pour qui, et pourquoi ?",html:()=>`
+   <div><div class="k">Les utilisateurs · 1.1</div><h2>Pour qui, et pourquoi ?</h2></div>
+   <div class="row fill" style="gap:40px">
+    <div class="col" style="width:880px">
+     <div class="card"><h3 style="margin-bottom:12px">Le problème</h3><ul class="l" style="font-size:24px"><li>On ne sait pas d'où vient la panne.</li><li>Les tutoriels visent d'autres modèles.</li><li>Un diagnostic chez le réparateur coûte cher, même pour une panne simple.</li></ul></div>
+     <div class="card" style="background:var(--forest);color:var(--snow);border-color:var(--forest)"><h3 style="color:var(--mint);margin-bottom:10px">Notre réponse</h3><p style="font-size:25px">Je photographie l'étiquette et le code, je décris la panne, je réponds à quelques questions, je suis un guide pas à pas. Si rien ne marche, la communauté prend le relais, et sa réponse validée enrichit la base.</p></div>
+     <div class="row" style="align-items:center;gap:26px"><div style="font:800 140px/0.9 var(--fd);color:var(--mintd)">3<span style="font-size:60px"> min</span></div><p style="font-size:25px">pour obtenir une première piste de solution : notre objectif mesurable.</p></div>
+     <div class="card" style="background:var(--amberl);border-color:var(--amber)"><p style="font-size:21px"><b>Hors cible</b> : réparateurs professionnels (outils et besoins de gestion), personnes très éloignées du numérique (aidées par un proche), mineurs (sécurité), entreprises et SAV.</p></div>
+    </div>
+    <div class="col fill" style="align-items:center"><div style="width:760px;height:760px">${targetSVG()}</div></div>
+   </div>`},
+  {id:"1-2",t:"Modèle de l'utilisateur",html:()=>`
+   <div><div class="k">Les utilisateurs · 1.2 · diapos 12 et 13 du cours</div><h2>Modèle de l'utilisateur</h2><p class="lead">Chaque caractéristique pertinente débouche sur une décision de conception.</p></div>
+   <div class="card" style="padding:10px 22px"><table class="t"><thead><tr><th style="width:250px">Caractéristique</th><th>Demandeurs (Salma, Youssef)</th><th>Contributeurs (Amine, Hédi)</th><th style="width:520px">Décision pour FixIt</th></tr></thead><tbody>
+    <tr class="g"><td colspan="4">Données générales · biométriques</td></tr>
+    <tr><td><b>Âge</b></td><td>18 à 30 ans</td><td>20 à 50 ans</td><td class="dec">Taille de texte réglable</td></tr>
+    <tr><td><b>Perception</b></td><td colspan="2">8 % des hommes daltoniens ; presbytie possible chez les plus âgés</td><td class="dec">Couleur toujours doublée d'un texte ou d'une forme</td></tr>
+    <tr><td><b>Situation physique</b></td><td>Mains occupées, peu de lumière, stress</td><td>Sur mobile, le soir</td><td class="dec">Grands boutons au pouce, mode sombre</td></tr>
+    <tr class="g"><td colspan="4">Données générales · sociales</td></tr>
+    <tr><td><b>Formation</b></td><td>Gestion, commerce</td><td>Génie électrique, BTS</td><td class="dec">Vocabulaire simple côté demandeur</td></tr>
+    <tr><td><b>Usages culturels</b></td><td colspan="2">Tunisie : français et arabe ; entraide entre voisins</td><td class="dec">FR / AR (droite à gauche), forum d'entraide</td></tr>
+    <tr class="g"><td colspan="4">Données centrées sur le produit</td></tr>
+    <tr><td><b>Domaine</b></td><td>Ne sait pas identifier une panne</td><td>Répare régulièrement</td><td class="dec">Termes expliqués, difficulté et outils annoncés</td></tr>
+    <tr><td><b>Informatique</b></td><td>À l'aise sur smartphone</td><td>À l'aise</td><td class="dec">Gestes mobiles standard, aucun manuel</td></tr>
+    <tr><td><b>Compétence</b></td><td>Débutant ou occasionnel</td><td>Expérimenté</td><td class="dec">Parcours guidé ; filtres et raccourcis pour les experts</td></tr>
+   </tbody></table></div>`},
+  {id:"1-3",t:"Un contexte contraignant",html:()=>`
+   <div><div class="k">Les utilisateurs · 1.3</div><h2>Un contexte d'utilisation contraignant</h2><p class="lead">On répare rarement assis à un bureau. Chaque contrainte observée devient une règle d'interface.</p></div>
+   <div class="fill" style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px">
+    ${ctxCard(ICON.hand,"Mains occupées","Il tient un tournevis ou une lampe ; le téléphone est posé ou dans une main.","Boutons de 48 × 48 dp minimum, en bas d'écran, utilisables au pouce")}
+    ${ctxCard(ICON.dark,"Peu de lumière","Salle de bain, arrière d'une machine, sous un évier.","Mode sombre et contraste d'au moins 4,5 : 1")}
+    ${ctxCard(`<svg viewBox="40 26 120 120">${face("salma","stressed")}</svg>`,"Stress","Panne urgente, peur d'aggraver, examens.","Ton rassurant, une seule action par écran, progression visible")}
+    ${ctxCard(ICON.cam,"Photos à prendre","Étiquette petite, reflets, code qui clignote.","Cadre de visée, conseils, reprise ou saisie manuelle")}
+    ${ctxCard(ICON.wifi,"Connexion instable","Sous-sol, cave, données mobiles limitées.","Guide en cours gardé sur le téléphone")}
+    ${ctxCard(ICON.warn,"Risque physique","Eau, électricité, batterie gonflée.","Alerte obligatoire avant l'étape, arrêt en cas de danger")}
+   </div>`},
+  {id:"1-4",t:"Persona : Salma",html:()=>personaSlide("salma"),bare:1},
+  {id:"1-5",t:"Persona : Youssef",html:()=>personaSlide("youssef"),bare:1},
+  {id:"1-6",t:"Persona : Amine",html:()=>personaSlide("amine"),bare:1},
+  {id:"1-7",t:"Persona : Hédi",html:()=>personaSlide("hedi"),bare:1}
+ ]},
+ {n:"02",title:"Les scénarios",desc:"Cinq storyboards : un déclencheur, l'interaction avec FixIt, une résolution. Chaque case nomme le principe d'IHM qu'elle illustre.",slides:[
+  {id:"2-1",t:"S1 · Salma",html:()=>storySlide("2-1")},
+  {id:"2-2",t:"S2 · Youssef, guide interrompu",html:()=>storySlide("2-2")},
+  {id:"2-3",t:"S3 · Youssef, forum",html:()=>storySlide("2-3")},
+  {id:"2-4",t:"S4 · Amine et Rania",html:()=>storySlide("2-4")},
+  {id:"2-5",t:"S5 · Hédi signale",html:()=>storySlide("2-5")}
+ ]},
+ {n:"03",title:"Le modèle des tâches",desc:"L'arbre, ses décorations et les opérateurs UAN, exactement dans la notation du cours.",slides:[
+  {id:"3-1",t:"Lire un arbre de tâches",html:()=>`
+   <div><div class="k">Modèle des tâches · 3.1 · diapos 22 et 23 du cours</div><h2>Lire un arbre de tâches</h2><p class="lead">Un nœud est un but ; son sous-arbre est la procédure pour l'atteindre. Exemple réel : photographier l'étiquette.</p></div>
+   <div class="row fill" style="gap:34px">
+    <div class="col" style="width:640px">
+     <div class="card"><h3 style="font-size:26px">Tâche</h3><p>Un but (un état souhaité) et une procédure pour l'atteindre.</p></div>
+     <div class="card"><h3 style="font-size:26px">Procédure</h3><p>Des sous-tâches liées par composition et par des relations temporelles (opérateurs UAN).</p></div>
+     <div class="card"><h3 style="font-size:26px">Tâche élémentaire</h3><p>Une feuille de l'arbre, décomposable en actions physiques.</p></div>
+     <div class="card"><h3 style="font-size:26px">Action physique</h3><p>Un geste sur l'appareil d'entrée ou de sortie : toucher le déclencheur, afficher la photo.</p></div>
+    </div>
+    <div class="col fill">
+     <div class="tarea" data-tree="3-1" style="flex:1"></div>
+     <div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:10px 28px;font-size:20px;padding:18px 24px">
+      <div><b style="color:var(--mintd)">Bordure foncée</b> : tâche composée</div><div><b style="color:var(--mintd)">Fond gris, badge S</b> : tâche du système</div>
+      <div><b style="color:var(--red)">*</b> : répétition · <b>pointillés [ ]</b> : optionnelle</div><div><b class="mono">U · S · U+S</b> : acteur responsable</div>
+      <div><b class="mono">fr ●●○</b> : fréquence · <b class="mono">crit É</b> : criticité</div><div><b class="mono">⏱</b> : contrainte temporelle (durée maximale)</div>
+     </div>
+    </div>
+   </div>`},
+  {id:"3-2",t:"Opérateurs UAN et décorations",html:()=>`
+   <div><div class="k">Modèle des tâches · 3.2 · diapos 23, 27 et 28 du cours</div><h2>Opérateurs UAN et décorations</h2><p class="lead">La notation demandée : l'arbre, toutes ses décorations et les opérateurs UAN. Chaque opérateur est utilisé au moins une fois, sur un cas réel.</p></div>
+   <div class="row fill" style="gap:28px">
+    <div class="card fill" style="padding:10px 22px"><table class="t"><thead><tr><th>Relation</th><th>UAN</th><th>Arbre</th><th>Où dans FixIt</th></tr></thead><tbody>
+     <tr><td><b>Séquence</b></td><td class="mono">A B</td><td class="mono">;</td><td>Signaler, puis questionnaire, puis solution <button class="go" data-node="2">2</button></td></tr>
+     <tr><td><b>Attente</b></td><td class="mono">A (t&gt;n) B</td><td class="mono">(t&gt;3 s)</td><td>« J'ai compris » actif 3 s après l'alerte <button class="go" data-node="2.3.2.1">2.3.2.1</button></td></tr>
+     <tr><td><b>Disjonction</b></td><td class="mono">(A | B)*</td><td class="mono">ou</td><td>Photo de l'étiquette ou saisie à la main <button class="go" data-node="2.1.1">2.1.1</button></td></tr>
+     <tr><td><b>Indépendance d'ordre</b></td><td class="mono">A &amp; B</td><td class="mono">&amp;</td><td>Préparer le post : relire, choisir les photos <button class="go" data-node="3.2">3.2</button></td></tr>
+     <tr><td><b>Entrelacement mono.</b></td><td class="mono">A → B</td><td class="mono">→</td><td>Interrompre le guide pendant une étape <button class="go" data-node="2.3.2.2">2.3.2.2</button></td></tr>
+     <tr><td><b>Entrelacement bidir.</b></td><td class="mono">A ↔ B</td><td class="mono">↔</td><td>Passer d'une grande tâche à l'autre <button class="go" data-node="0">0</button></td></tr>
+     <tr><td><b>Parallélisme</b></td><td class="mono">A || B</td><td class="mono">||</td><td>Répondre pendant que la progression s'affiche <button class="go" data-node="2.2">2.2</button></td></tr>
+    </tbody></table></div>
+    <div class="card" style="width:640px;background:var(--forest);color:var(--snow);border-color:var(--forest)"><h3 style="color:var(--mint);margin-bottom:14px">Les décorations de chaque nœud</h3>
+     <table class="t" style="font-size:19px;color:var(--snow)"><tbody>
+      ${[["Objets référencés","Étiquette, Code d'erreur"],["Préconditions","Étiquette lisible"],["Postconditions","Modèle proposé"],["Fréquence, optionnel, répétition","●●○ · [ ] · *"],["Complexité","Faible, Moyenne, Élevée"],["Criticité","Élevée pour le guide"],["Contrainte temporelle","⏱ < 3 s pour l'OCR"],["Acteur","U, S ou U+S"],["Autres","Rôle, personas, message, écran"]].map(([a,b])=>`<tr><td style="border-color:var(--forest3);color:var(--mist);font-weight:600">${a}</td><td style="border-color:var(--forest3)">${b}</td></tr>`).join("")}
+     </tbody></table></div>
+   </div>`},
+  {id:"3-3",t:"L'arbre complet",html:()=>treeSlide("3-3")},
+  {id:"3-4",t:"Gérer mon compte",html:()=>treeSlide("3-4")},
+  {id:"3-5",t:"Signaler le problème",html:()=>treeSlide("3-5")},
+  {id:"3-6",t:"Diagnostiquer et réparer",html:()=>treeSlide("3-6")},
+  {id:"3-7",t:"Demander de l'aide",html:()=>treeSlide("3-7")},
+  {id:"3-8",t:"Aider la communauté",html:()=>treeSlide("3-8")},
+  {id:"3-9",t:"Administrer",html:()=>treeSlide("3-9")}
+ ]},
+ {n:"04",title:"De l'analyse à l'écran",desc:"La démarche suivie, les points faibles de l'arbre que nous avons corrigés, l'écran d'accueil et l'évaluation prévue.",slides:[
+  {id:"4-1",t:"Notre démarche",html:()=>`
+   <div><div class="k">De l'analyse à l'écran · 4.1 · diapo 24 du cours</div><h2>Notre démarche en cinq étapes</h2><p class="lead">« Vous n'êtes pas un utilisateur représentatif » : chaque étape part des utilisateurs, pas de nos habitudes de développeurs.</p></div>
+   <div class="fill" style="display:grid;grid-template-columns:repeat(5,1fr);gap:18px">
+    ${[["1","Recueillir sur le terrain","Entretiens avec 6 à 12 utilisateurs représentatifs ; observation en situation avec la pensée à voix haute, deux à la fois."],["2","Identifier les concepts","Les objets que l'utilisateur manipule : appareil, étiquette, code, question, solution, guide, post."],["3","Énumérer les opérations","Ce qu'on fait sur chaque concept devient une tâche élémentaire (diapo suivante)."],["4","Construire et décorer","Hiérarchie par buts, opérateurs UAN, puis toutes les décorations de chaque nœud."],["5","Évaluer la décomposition","Points singuliers, évaluation avec l'utilisateur, maquettes ; le magicien d'Oz simule l'OCR avant qu'il existe."]].map(([n,t,d],i)=>`<div class="card" style="display:flex;flex-direction:column;gap:12px;${i===4?"background:var(--mintl);border-color:var(--mint)":""}"><div style="font:800 76px/1 var(--fd);color:var(--mintd)">${n}</div><h3 style="font-size:28px">${t}</h3><p style="font-size:21px">${d}</p></div>`).join("")}
+   </div>
+   <div class="card" style="display:flex;align-items:center;gap:30px;background:var(--forest);color:var(--snow);border-color:var(--forest)"><b style="font:800 30px var(--fd);color:var(--mint)">Un cycle itératif</b><span style="font-size:24px">Analyse → Conception → Évaluation → retour à la conception. Deux à trois itérations suffisent pour une interface de cette taille.</span></div>`},
+  {id:"4-2",t:"Des concepts aux tâches",html:()=>`
+   <div><div class="k">De l'analyse à l'écran · 4.2</div><h2>Des concepts aux tâches élémentaires</h2><p class="lead">Chaque opération sur un objet du domaine devient une feuille de l'arbre. Touchez un numéro pour voir la tâche.</p></div>
+   <div class="card fill" style="padding:8px 22px"><table class="t" style="font-size:20px"><thead><tr><th style="width:300px">Concept</th><th style="width:420px">Opérations</th><th>Tâches de l'arbre</th></tr></thead><tbody>
+    ${[["Appareil","identifier, saisir, confirmer",["2.1.1","2.1.1.2","2.1.3"]],["Étiquette, photo","cadrer, photographier, lire, reprendre",["2.1.1.1.1","2.1.1.1.2","2.1.1.1.3","2.1.1.1.4"]],["Code d'erreur","photographier, lire",["2.1.2.1","2.1.2.2"]],["Question","lire, répondre, revenir",["2.2.1.1","2.2.1.2","2.2.1.3"]],["Solution","classer, parcourir, consulter, lancer",["2.3.1.1","2.3.1.2","2.3.1.3","2.3.1.4"]],["Guide, étape","lire, réaliser, interrompre, reprendre",["2.3.2.2.1","2.3.2.2.2"]],["Alerte sécurité","afficher, confirmer",["2.3.2.1.1","2.3.2.1.2"]],["Post","préparer, publier, clore",["3.2","3.3","3.6"]],["Réponse","rédiger, voter, choisir la meilleure",["4.1.2.2","4.2.1","3.6.1"]],["Signalement","créer, examiner, décider",["4.2.2","5.2.2","5.2.3"]]].map(([c,o,ids])=>`<tr><td><b>${c}</b></td><td>${o}</td><td>${ids.map(i=>`<button class="go" type="button" data-node="${i}" style="margin:2px">${i}</button>`).join(" ")}</td></tr>`).join("")}
+   </tbody></table></div>`},
+  {id:"4-3",t:"Points singuliers corrigés",html:()=>`
+   <div><div class="k">De l'analyse à l'écran · 4.3</div><h2>Ce que l'analyse de l'arbre nous a fait corriger</h2><p class="lead">Le cours demande de chercher les points singuliers : décompositions multiples et trop de parallélisme. Voici ce que nous avons trouvé et décidé.</p></div>
+   <div class="fill" style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
+    ${[["Décomposition multiple","« Se connecter » apparaissait sous le compte (1.1) et avant la publication (3.1).","Une seule décomposition, en 1.1 ; la tâche 3.1 y renvoie et reste optionnelle.","3.1"],["Décomposition multiple","« Essayer la solution » apparaissait après le diagnostic et après une réponse du forum.","Le guide est le même : 3.5.1 réutilise 2.3.2.","3.5.1"],["Trop de parallélisme","Pendant le guide, on aurait pu lire, zoomer, commenter et quitter en même temps.","Un seul parallélisme (questionnaire || progression) ; le guide n'autorise que l'interruption (→).","2.3.2.2"],["Tâche critique","« Suivre le guide » est la seule tâche à risque physique.","Alerte obligatoire, bouton actif après 3 s, arrêt du guide en cas de danger.","2.3.2.1"]].map(([t,c,d,n])=>`<div class="card" style="display:flex;flex-direction:column;gap:12px"><span class="chip a" style="align-self:flex-start">${t}</span><p style="font-size:22px"><b>Constat :</b> ${c}</p><p style="font-size:22px;color:var(--mintd);font-weight:600">Décision : ${d}</p><button class="go" type="button" data-node="${n}" style="align-self:flex-start">Voir ${n}</button></div>`).join("")}
+   </div>`},
+  {id:"4-4",t:"L'écran d'accueil",html:()=>`
+   <div><div class="k">De l'analyse à l'écran · 4.4 · diapos 29 à 42 du cours</div><h2>L'écran d'accueil passé au crible du cours</h2></div>
+   <div class="row fill" style="gap:56px;align-items:center">
+    <div style="position:relative;flex-shrink:0;transform:scale(.98);transform-origin:top left">
+     <div class="app"><span class="nt"></span><span class="tm">9:41</span><span class="lg"><span class="on">FR</span><span>AR</span></span>
+      <h4>Bonjour Emna</h4><p class="s">Un appareil qui pose problème ? Décrivez-le et on vous guide, étape par étape.</p>
+      <div class="cta">+ Décrire un problème</div>
+      <div class="sec">VOS APPAREILS</div>
+      <div class="it"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7FBFB3" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="13" r="4"/></svg></span><div><b>Lave-linge Samsung</b><small>Bruit à l'essorage · en cours</small></div><span class="bg a">À suivre</span></div>
+      <div class="it"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7FBFB3" stroke-width="2"><path d="M7 4h10l-2 7h-6zM12 11v9"/></svg></span><div><b>Robinet cuisine</b><small>Fuite légère · réparé le 03/09</small></div><span class="bg g">Réparé</span></div>
+      <div class="hist">Voir tout l'historique</div>
+     </div>
+     <span class="pin" style="left:-20px;top:120px">1</span><span class="pin" style="left:400px;top:236px">2</span><span class="pin" style="left:410px;top:400px">3</span><span class="pin" style="left:-20px;top:700px">4</span><span class="pin" style="left:400px;top:10px">5</span><span class="pin" style="left:-20px;top:300px">6</span>
+    </div>
+    <div class="col fill" style="gap:18px">
+     <div class="ann"><span class="n">1</span><p><b>Lecture en Z.</b> Salutation, puis action, puis appareils : le regard part du coin supérieur gauche et descend.<small>Agencement · diapo 29</small></p></div>
+     <div class="ann"><span class="n">2</span><p><b>L'action principale d'abord</b>, pleine largeur, dans la zone la plus visible et la plus accessible.<small>Agencement · diapos 32 et 36</small></p></div>
+     <div class="ann"><span class="n">3</span><p><b>Couleur + texte.</b> Le statut est écrit (« À suivre », « Réparé ») en plus de sa couleur, pour les daltoniens.<small>Graphisme · diapo 39</small></p></div>
+     <div class="ann"><span class="n">4</span><p><b>Commandes annexes à la fin</b> : l'historique complet est en bas.<small>Agencement · diapo 36</small></p></div>
+     <div class="ann"><span class="n">5</span><p><b>FR / AR en un geste</b>, pour les usages culturels de nos utilisateurs.<small>Modèle de l'utilisateur · diapo 13</small></p></div>
+     <div class="ann"><span class="n">6</span><p><b>Le langage de l'utilisateur</b> : « Décrire un problème », pas « Créer un ticket ». Phrases courtes, minuscules avec majuscule initiale.<small>Langage · diapo 42</small></p></div>
+     <div class="card" style="background:var(--amberl);border-color:var(--amber);padding:16px 22px"><p style="font-size:21px"><b>À discuter :</b> le cours recommande un fond clair et neutre (diapo 40). Le fond sombre sert Youssef dans la pénombre ; nous proposons le thème clair par défaut et le mode sombre en option.</p></div>
+    </div>
+   </div>`},
+  {id:"4-5",t:"Évaluer l'utilisabilité",html:()=>`
+   <div><div class="k">De l'analyse à l'écran · 4.5</div><h2>Comment nous allons évaluer</h2><p class="lead">Deux méthodes analytiques, puis des tests avec de vrais utilisateurs de la cible principale.</p></div>
+   <div class="row fill" style="gap:28px">
+    <div class="fill" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+     ${[["Évaluation heuristique","Chaque membre inspecte les maquettes avec les 10 heuristiques de Nielsen ; gravité notée de 0 à 4."],["Magicien d'Oz","Avant que l'OCR existe, un membre de l'équipe lit l'étiquette en coulisses : on teste le parcours sans le coder."],["Tests avec pensée à voix haute","5 étudiants réalisent S1 à S3 sur le prototype Figma ; on observe où ils hésitent."],["Questionnaire SUS","Après chaque test : un score d'utilisabilité sur 100, comparable entre itérations."]].map(([t,d])=>`<div class="card"><h3 style="font-size:28px;margin-bottom:10px">${t}</h3><p style="font-size:22px">${d}</p></div>`).join("")}
+    </div>
+    <div class="card" style="width:560px;background:var(--forest);color:var(--snow);border-color:var(--forest);display:flex;flex-direction:column;gap:18px"><h3 style="color:var(--mint)">Nos objectifs</h3>
+     ${[["< 3 min","pour la première solution"],["≥ 80 %","de scénarios réussis sans aide"],["≤ 2","erreurs par scénario"],["≥ 70","de score SUS moyen"]].map(([a,b])=>`<div style="display:flex;align-items:baseline;gap:18px"><b style="font:800 64px/1 var(--fd);color:var(--mint);width:250px">${a}</b><span style="font-size:23px">${b}</span></div>`).join("")}
+    </div>
+   </div>`},
+  {id:"4-6",t:"Merci",html:()=>`
+   <div class="row fill" style="align-items:center;gap:60px">
+    <div class="col fill"><div class="k">Conclusion</div><h2 style="font-size:120px">Merci.<br><span style="color:var(--mintd)">Des questions ?</span></h2>
+     <p class="lead" style="font-size:30px">FixIt part de ses utilisateurs : quatre personas, cinq scénarios, un arbre de tâches décoré, et une évaluation pour vérifier que l'interface tient ses promesses.</p>
+     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px">${["1-4","2-2","3-6","4-4"].map(s=>`<button class="go" type="button" data-go="${s}" style="font-size:22px;padding:8px 18px">Revoir ${s.replace("-",".")}</button>`).join("")}</div>
+     <p style="font-size:26px;margin-top:30px;font-weight:600">Nour Bribech · Arij Chabbouh · Emna Thouabtia</p></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;width:620px">${["salma","youssef","amine","hedi"].map(c=>`<div style="width:290px;height:290px">${portrait(c,"happy")}</div>`).join("")}</div>
+   </div>`}
+ ]}
+];
+SECTIONS.forEach(s=>s.slides.forEach(x=>{if(!SLIDETITLE[x.id])SLIDETITLE[x.id]=x.t;}));
+TREES["3-1"]={root:"2.1.1.1",title:"",lead:"",sel:"2.1.1.1"};
+
+/* =====================================================================
+   5. MONDE ZOOMABLE
+   ===================================================================== */
+const world=document.getElementById("world");
+const TILEPOS=[[0,640],[2120,640],[0,1920],[2120,1920]];
+const OVER={x:-140,y:-40,w:4320,h:3080};
+const BOX={},STOPS=["over"],STOPSEC={over:-1};
+let html=`<div class="band"><div class="logo"><div class="mark"><svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#14201D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg></div><div><h1>FixIt</h1><div class="sub">Diagnostiquer et réparer soi-même, pas à pas · Module IHM</div></div></div><div class="team"><b>Nour Bribech · Arij Chabbouh · Emna Thouabtia</b>ENICarthage · Conception centrée utilisateur</div></div>`;
+SECTIONS.forEach((sec,si)=>{
+  const [tx,ty]=TILEPOS[si];BOX["t"+(si+1)]={x:tx-20,y:ty-20,w:1960,h:1120};STOPS.push("t"+(si+1));STOPSEC["t"+(si+1)]=si;
+  const n=sec.slides.length,cols=n<=6?3:(n<=8?4:3),rows=Math.ceil(n/cols),g=30,lab=44,areaW=1728,areaH=680;
+  const s=Math.min((areaW-(cols-1)*g)/cols/1920,(areaH-(rows-1)*g-rows*lab)/rows/1080),mw=1920*s,mh=1080*s;
+  const gx=96+(areaW-(cols*mw+(cols-1)*g))/2,gy=352;
+  html+=`<div class="tile" data-stop="t${si+1}" style="left:${tx}px;top:${ty}px"><div class="num">${sec.n}</div><h2>${sec.title}</h2><p class="tdesc">${sec.desc}</p>`;
+  sec.slides.forEach((sl,i)=>{const c=i%cols,r=Math.floor(i/cols),x=gx+c*(mw+g),y=gy+r*(mh+g+lab);
+    BOX[sl.id]={x:tx+x,y:ty+y,w:mw,h:mh};STOPS.push(sl.id);STOPSEC[sl.id]=si;
+    html+=`<div class="mini" data-stop="${sl.id}" style="left:${x}px;top:${y}px;width:${mw}px;height:${mh}px"><div class="slide" id="sl-${sl.id}" style="transform:scale(${s})">${sl.html()}${sl.bare?"":""}<span class="sfoot">${sl.id.replace("-",".")} · FixIt</span></div></div><div class="mlab" style="left:${x}px;top:${y+mh+8}px;width:${mw}px"><b>${sl.id.replace("-",".")}</b>${sl.t}</div>`;});
+  html+=`</div>`;
 });
+world.innerHTML=html;
+BOX.over=OVER;
 
-// THREE.JS
-(function() {
-  const canvas = document.getElementById('three-canvas');
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x000000, 0);
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-  camera.position.set(0, 0, 5);
-  function resize() {
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
+/* Arbres interactifs */
+const treeState={};
+function renderTree(id){const c=TREES[id],el=document.querySelector(`#sl-${id} .tarea`);if(!el)return;const st=treeState[id]||(treeState[id]={sel:c.sel,path:null,pop:false});
+  cfgSlideOf=id;el.innerHTML=drawTree(BY[c.root],{maxD:c.maxD,cut:c.cut,link:c.link,sel:st.sel,path:st.path?c.paths[st.path]:[]})+(st.pop?`<div class="pop">${decoHTML(st.sel)}</div>`:"");}
+Object.keys(TREES).forEach(renderTree);
+document.addEventListener("click",e=>{
+  const sl=e.target.closest(".slide");const cur=e.target.closest(".mini.cur");
+  if(cur){
+    const tn=e.target.closest(".tn");const ta=e.target.closest(".tarea");
+    if(tn&&ta){const id=ta.dataset.tree;treeState[id].sel=tn.dataset.n;treeState[id].pop=true;renderTree(id);return;}
+    if(e.target.closest("[data-close]")){const ta2=e.target.closest(".tarea");treeState[ta2.dataset.tree].pop=false;renderTree(ta2.dataset.tree);return;}
+    const pb=e.target.closest("[data-path]");if(pb){const sid=sl.id.slice(3);const st=treeState[sid];st.path=st.path===pb.dataset.path?null:pb.dataset.path;st.pop=false;renderTree(sid);sl.querySelectorAll("[data-path]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.path===st.path));return;}
+    const g=e.target.closest("[data-go]");if(g){goStop(STOPS.indexOf(g.dataset.go));return;}
+    const nd=e.target.closest("[data-node]");if(nd){openNode(nd.dataset.node);return;}
+    return;
   }
-  resize(); window.addEventListener('resize', resize);
-  const matWire = new THREE.MeshBasicMaterial({ color: 0x2563EB, wireframe: true, opacity: 0.18, transparent: true });
-  const matGlass = new THREE.MeshPhongMaterial({ color: 0xEEF4FF, emissive: 0x1a3a8f, emissiveIntensity: 0.12, shininess: 120, opacity: 0.55, transparent: true, side: THREE.FrontSide });
-  const sphere = new THREE.Mesh(new THREE.IcosahedronGeometry(1.3, 1), matGlass);
-  scene.add(sphere);
-  const wire = new THREE.Mesh(new THREE.IcosahedronGeometry(1.7, 1), matWire);
-  scene.add(wire);
-  const torus1 = new THREE.Mesh(new THREE.TorusGeometry(2.1, 0.012, 8, 60), new THREE.MeshBasicMaterial({ color: 0x2563EB, opacity: 0.3, transparent: true }));
-  torus1.rotation.x = Math.PI / 2; scene.add(torus1);
-  const torus2 = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.008, 8, 60), new THREE.MeshBasicMaterial({ color: 0x06B6D4, opacity: 0.2, transparent: true }));
-  torus2.rotation.x = 0.8; torus2.rotation.z = 0.4; scene.add(torus2);
-  const dots = [];
-  for (let i = 0; i < 5; i++) {
-    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0x2563EB }));
-    dots.push({ mesh: dot, angle: (i / 5) * Math.PI * 2, radius: 2.1 + Math.random() * 0.4, speed: 0.3 + Math.random() * 0.3, y: (Math.random() - 0.5) * 1.5 });
-    scene.add(dot);
-  }
-  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-  const bl = new THREE.PointLight(0x2563EB, 2, 10); bl.position.set(3, 2, 3); scene.add(bl);
-  const cl = new THREE.PointLight(0x06B6D4, 1.5, 8); cl.position.set(-3, -1, 2); scene.add(cl);
-  let scrollProgress = 0, mouseX = 0, mouseY = 0;
-  window.addEventListener('scroll', () => { scrollProgress = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight); });
-  window.addEventListener('mousemove', e => { mouseX = (e.clientX / window.innerWidth - 0.5) * 2; mouseY = -(e.clientY / window.innerHeight - 0.5) * 2; });
-  const clock = new THREE.Clock();
-  function animate() {
-    requestAnimationFrame(animate);
-    const t = clock.getElapsedTime();
-    sphere.rotation.x = t * 0.08; sphere.rotation.y = t * 0.12;
-    wire.rotation.x = -t * 0.06; wire.rotation.y = t * 0.09;
-    torus1.rotation.z = t * 0.05; torus2.rotation.y = t * 0.04;
-    sphere.rotation.y += mouseX * 0.0015; sphere.rotation.x += mouseY * 0.0015;
-    wire.rotation.y += mouseX * 0.001;
-    const scrollOffset = scrollProgress * -3.5;
-    sphere.position.y = wire.position.y = scrollOffset * 0.5;
-    torus1.position.y = torus2.position.y = scrollOffset * 0.6;
-    const sc = 1 - scrollProgress * 0.3;
-    sphere.scale.setScalar(sc); wire.scale.setScalar(sc * 1.05);
-    torus1.scale.setScalar(sc); torus2.scale.setScalar(sc);
-    matGlass.opacity = Math.max(0, 0.55 - scrollProgress * 0.8);
-    matWire.opacity = Math.max(0, 0.18 - scrollProgress * 0.25);
-    camera.position.x = mouseX * 0.3; camera.position.y = mouseY * 0.2;
-    camera.lookAt(0, scrollOffset * 0.3, 0);
-    dots.forEach(d => {
-      d.angle += d.speed * 0.008;
-      d.mesh.position.x = Math.cos(d.angle) * d.radius;
-      d.mesh.position.z = Math.sin(d.angle) * d.radius;
-      d.mesh.position.y = d.y + scrollOffset * 0.5;
-      d.mesh.material.opacity = Math.max(0, 0.8 - scrollProgress);
-      d.mesh.material.transparent = true;
-    });
-    renderer.render(scene, camera);
-  }
-  animate();
-})();
-
-// Scroll reveal
-const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.08 });
-document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-
-// Form
-document.getElementById('contactForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const btn = document.getElementById('submitBtn');
-  btn.textContent = 'Sending...'; btn.disabled = true;
-  const data = { name: document.getElementById('name').value, email: document.getElementById('email').value, subject: document.getElementById('subject').value, message: document.getElementById('message').value };
-  try {
-    const res = await fetch('https://formspree.io/f/xnjyoalz', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) });
-    if (res.ok) {
-      btn.textContent = 'Sent ✓'; btn.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)'; this.reset();
-      setTimeout(() => { btn.textContent = 'Send message →'; btn.style.background = ''; btn.disabled = false; }, 3000);
-    } else {
-      btn.textContent = 'Error — try again'; btn.style.background = '#dc2626';
-      setTimeout(() => { btn.textContent = 'Send message →'; btn.style.background = ''; btn.disabled = false; }, 3000);
-    }
-  } catch { btn.textContent = 'Network error'; btn.disabled = false; }
+  const st=e.target.closest("[data-stop]");if(st&&!moved){goStop(STOPS.indexOf(st.dataset.stop));}
 });
+function openNode(nid){let target=NODESLIDE(nid)||"3-3";if(!BY[nid])return;const st=treeState[target];
+  st.sel=nid;st.pop=true;renderTree(target);goStop(STOPS.indexOf(target));}
+
+/* Caméra */
+let idx=0,timer=null;
+function cam(box,dur){const vw=innerWidth,vh=innerHeight,pad=box===OVER?1:1;const S=Math.min(vw/box.w,vh/box.h)*pad;
+  const tx=(vw-box.w*S)/2-box.x*S,ty=(vh-box.h*S)/2-box.y*S;world.style.transitionDuration=(dur??1000)+"ms";world.style.transform=`translate(${tx}px,${ty}px) scale(${S})`;}
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function goStop(i,instant){
+  if(i<0||i>=STOPS.length)return;const from=STOPS[idx],to=STOPS[i];idx=i;clearTimeout(timer);
+  document.querySelectorAll(".cur").forEach(x=>x.classList.remove("cur"));
+  const el=document.querySelector(`[data-stop="${to}"]`);if(el)el.classList.add("cur");
+  const sa=STOPSEC[from],sb=STOPSEC[to];
+  if(!instant&&!reduce&&from!=="over"&&to!=="over"&&sa!==sb){cam(OVER,800);timer=setTimeout(()=>cam(BOX[to],950),820);}
+  else cam(BOX[to],instant||reduce?0:(to==="over"||from==="over"?1050:900));
+  updNav();try{history.replaceState(null,"","#"+(to==="over"?"plan":"d"+to));}catch(e){}
+  document.getElementById("hint").classList.toggle("hide",to!=="over");
+}
+function updNav(){const to=STOPS[idx],si=STOPSEC[to];let lab;
+  if(to==="over")lab="<b>FixIt</b>Plan général";
+  else if(to[0]==="t"){const s=SECTIONS[si];lab=`<b>${s.n}</b>${s.title}`;}
+  else{const s=SECTIONS[si];lab=`<b>${to.replace("-",".")}</b>${SLIDETITLE[to]} · ${s.title}`;}
+  document.getElementById("nLab").innerHTML=lab;
+  document.getElementById("nPr").innerHTML=SECTIONS.map((s,i)=>`<i class="${i===si?"on":""}" title="${s.title}"></i>`).join("");}
+const next=()=>goStop(idx<STOPS.length-1?idx+1:0),prev=()=>goStop(Math.max(0,idx-1));
+function up(){const to=STOPS[idx];if(to==="over")return;if(to[0]==="t")goStop(0);else goStop(STOPS.indexOf("t"+(STOPSEC[to]+1)));}
+document.getElementById("nNext").onclick=next;document.getElementById("nPrev").onclick=prev;document.getElementById("nHome").onclick=()=>goStop(0);
+document.getElementById("nFull").onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch(e){}};
+document.addEventListener("keydown",e=>{if(e.target.closest("input,textarea"))return;
+  if(["ArrowRight","PageDown"," ","Enter"].includes(e.key)&&!(e.key==="Enter"&&e.target.closest("button"))){e.preventDefault();next();}
+  else if(["ArrowLeft","PageUp","Backspace"].includes(e.key)){e.preventDefault();prev();}
+  else if(e.key==="Escape"){up();}else if(e.key==="Home"){goStop(0);}else if(e.key==="f"||e.key==="F"){document.getElementById("nFull").click();}});
+addEventListener("resize",()=>cam(BOX[STOPS[idx]],0));
+/* Glisser pour naviguer sur écran tactile */
+let sx=null,moved=false;
+addEventListener("pointerdown",e=>{sx=[e.clientX,e.clientY];moved=false;});
+addEventListener("pointermove",e=>{if(sx&&Math.hypot(e.clientX-sx[0],e.clientY-sx[1])>12)moved=true;});
+addEventListener("pointerup",e=>{if(!sx)return;const dx=e.clientX-sx[0],dy=e.clientY-sx[1];if(e.pointerType==="touch"&&Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.5){dx<0?next():prev();}sx=null;setTimeout(()=>moved=false,0);});
+/* Barre de navigation discrète */
+let hideT;const nav=document.getElementById("nav");
+function wake(){nav.classList.remove("hide");clearTimeout(hideT);hideT=setTimeout(()=>{if(STOPS[idx]!=="over")nav.classList.add("hide");},2600);}
+addEventListener("pointermove",wake);addEventListener("keydown",wake);
+/* Démarrage */
+const h=(location.hash||"").slice(1);let start=0;if(h.startsWith("d")&&STOPS.includes(h.slice(1)))start=STOPS.indexOf(h.slice(1));else if(STOPS.includes(h))start=STOPS.indexOf(h);
+goStop(start,true);wake();
 </script>
-</body>
-</html>
